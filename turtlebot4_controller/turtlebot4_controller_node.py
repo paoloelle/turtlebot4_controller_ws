@@ -6,6 +6,7 @@ from sensor_msgs.msg import LaserScan
 from rclpy.qos import qos_profile_sensor_data
 from irobot_create_msgs.msg import HazardDetection, HazardDetectionVector
 #import turtlebot4_controller.ANN_controller as controller
+from math import pi, copysign
 
 class Controller_Node(Node):
 
@@ -27,52 +28,62 @@ class Controller_Node(Node):
             qos_profile_sensor_data
         )
 
-        
-        self.declare_parameter('weights', [1]*(input_size*hidden_size)+(hidden_size*output_size)) 
-        
-        #self.ann_controller = controller(input_size, hidden_size, output_size)
-
         self.bumper = 0
 
-        self.scan_lectures = None
+        self.filtered_scan = None 
+
+        #self.ann_controller = controller(input_size, hidden_size, output_size)
+
+        
         
 
 
     
     def hazard_callback(self, msg): # care only about bumper collision
-        if len(msg.detections) != 0:
-            hazard = msg.detections[0]
-            if hazard.type == 2:
-                self.get_logger().info('Collision')
-                self.bumper = 1
-        else:
-            self.bumper = 0
+        print(' ')
 
 
 
-    def scan_callback(self, msg):
+    def scan_callback(self, scan_msg):
         
-        min_index = int((self.min_angle - msg.angle_min) / msg.angle_increment)
-        max_index = int((self.max_angle - msg.angle_min) / msg.angle_increment)
+        self.get_min_distance(scan_msg)
 
-        min_index = max(0, min(min_index, len(msg.ranges) - 1))
-        max_index = max(0, min(max_index, len(msg.ranges) - 1))
-
-
-        filtered_ranges = msg.ranges[min_index:max_index-1]
-
-        
-
-        normalized_ranges = [(x - msg.range_min) / (msg.range_max - msg.range_min) * (msg.range_max - msg.range_min) + msg.range_min for x in filtered_ranges]
-        normalized_ranges = [msg.range_min if x==float('inf') else x for x in normalized_ranges] # remove inf values
-
-        #filtered_scan.ranges = normalized_ranges
-
-        #self.publisher.publish(filtered_scan)
-        print(len(normalized_ranges))
 
 
     #lin_vel, ang_vel = self.ann.forward(sensors_data) qui ottengo i valori da pubblicare nel topic cmd_vel
+        
+    def get_min_distance(self, scan_msg):
+
+        min_index, max_index = self.get_reference_index(scan_msg, pi/8, pi)
+        print(min_index)
+        print(max_index)
+
+        
+        
+
+        #TODO normalize ranges between 0 and 1
+
+    def get_reference_index(scan_msg, min_angle, max_angle):
+                  
+        min_angle = min_angle + pi
+        max_angle = max_angle + pi
+
+        msg_angle_min = scan_msg.angle_min + pi
+
+        # compute correspondig index
+        lower_index = int((min_angle - msg_angle_min) /scan_msg.angle_increment)
+        upper_index = int((max_angle - msg_angle_min) /scan_msg.angle_increment)
+
+        lower_index = 1
+        upper_index = 2
+
+        return lower_index, upper_index
+
+
+
+
+
+
 
 def main(args=None):
 
