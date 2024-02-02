@@ -6,7 +6,7 @@ from sensor_msgs.msg import LaserScan
 from rclpy.qos import qos_profile_sensor_data
 from irobot_create_msgs.msg import HazardDetection, HazardDetectionVector
 #import turtlebot4_controller.ANN_controller as controller
-from math import pi, copysign
+from math import pi
 
 class Controller_Node(Node):
 
@@ -36,8 +36,6 @@ class Controller_Node(Node):
 
         
         
-
-
     
     def hazard_callback(self, msg): # care only about bumper collision
         print(' ')
@@ -46,11 +44,10 @@ class Controller_Node(Node):
 
     def scan_callback(self, scan_msg):
         
-        self.get_min_distance(scan_msg)
+        self.get_min_distance(self, scan_msg)
 
 
 
-    #lin_vel, ang_vel = self.ann.forward(sensors_data) qui ottengo i valori da pubblicare nel topic cmd_vel
         
     def get_min_distance(self, scan_msg):
 
@@ -63,7 +60,7 @@ class Controller_Node(Node):
 
         #TODO normalize ranges between 0 and 1
 
-    def get_reference_index(scan_msg, min_angle, max_angle):
+    def get_reference_index(self, scan_msg, min_angle, max_angle):
                   
         min_angle = min_angle + pi
         max_angle = max_angle + pi
