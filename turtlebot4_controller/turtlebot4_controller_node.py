@@ -21,12 +21,12 @@ class Controller_Node(Node):
             qos_profile_sensor_data
         )
 
-        self.hazard_subscription= self.create_subscription(
-            HazardDetectionVector,
-            'hazard_detection',
-            self.hazard_callback,
-            qos_profile_sensor_data
-        )
+        #self.hazard_subscription= self.create_subscription(
+        #    HazardDetectionVector,
+        #    'hazard_detection',
+        #    self.hazard_callback,
+        #    qos_profile_sensor_data
+        #)
 
 
         self.filtered_scan = []
@@ -39,44 +39,44 @@ class Controller_Node(Node):
 
         
         
-    
-    def hazard_callback(self, msg): # care only about bumper collision
-        print(' ')
+    # TODO
+    #def hazard_callback(self, msg): # care only about bumper collision
+        #print('')
 
 
 
     def scan_callback(self, scan_msg):
 
+
         # split laser scan lectures in 8 sections as follows:
         # [-pi/8, pi/8], [pi/8, 3/8 pi], [3/8 pi, 5/8 pi], [5/8 pi, 7/8 pi]
         # [-pi/8, -3/8 pi], [-3/8 pi, -5/8 pi], [-5/8 pi, -7/8 pi], [-7/8 pi, 7/8 pi]
 
-        switch_lectures = True  
-        
+        switch_lectures = False  
+        self.filtered_scan.clear() # remove previous values
+
         for angle_limits in self.section_limits:
             min_angle_lim, max_angle_lim = angle_limits
 
             min_index, max_index = self.get_reference_index(scan_msg, min_angle_lim, max_angle_lim)  
 
-            if angle_limits[-1][0] == min_angle_lim and angle_limits[-1][1] == max_angle_lim:
+            if self.section_limits[-1] == (min_angle_lim, max_angle_lim):
                 switch_lectures = True
 
             min_distance = self.get_min_distance(scan_msg, min_index, max_index, switch_lectures)
-            
+
             self.filtered_scan.append(min_distance)
+
+        # TODO forward neural network            
             
-        print(self.fiiltred_scan)
         
-        
-
-
         
     def get_min_distance(self, scan_msg, min_index, max_index, switch_lectures):
 
-        
+        # FIXME error on line 80
 
         if switch_lectures:
-            section_lectures = [scan_msg.ranges[0:min_index], scan_msg.ranges[max_index, 0]]
+            section_lectures = scan_msg.ranges[0:min_index] + scan_msg.ranges[max_index:]
         else: 
             section_lectures = scan_msg.ranges[min_index:max_index]
 
@@ -84,6 +84,7 @@ class Controller_Node(Node):
         # normalise lectures between 0 and 1
         normalized_lectures = [(x - scan_msg.range_min) / (scan_msg.range_max - scan_msg.range_min) for x in section_lectures]
         normalized_lectures = [scan_msg.range_min if x==float('inf') else x for x in normalized_lectures] # remove inf values
+        
 
         return min(normalized_lectures)
 
