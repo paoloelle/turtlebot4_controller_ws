@@ -31,7 +31,7 @@ class Controller_Node(Node):
 
         self.filtered_scan = []
         
-        self.section_limits = [(-pi/8, pi/8), (pi/8, 3/8*pi), (3/8*pi, 5/8*pi),
+        self.SECTION_LIMITS = [(-pi/8, pi/8), (pi/8, 3/8*pi), (3/8*pi, 5/8*pi),
                                (5/8*pi, 7/8*pi), (-pi/8, -3/8*pi), (-3/8*pi, -5/8*pi),
                                (-5/8*pi, -7/8*pi), (-7/8*pi, 7/8*pi)]
 
@@ -55,12 +55,12 @@ class Controller_Node(Node):
         switch_lectures = False  
         self.filtered_scan.clear() # remove previous values
 
-        for angle_limits in self.section_limits:
+        for angle_limits in self.SECTION_LIMITS:
             min_angle_lim, max_angle_lim = angle_limits
 
             min_index, max_index = self.get_reference_index(scan_msg, min_angle_lim, max_angle_lim)  
 
-            if self.section_limits[-1] == (min_angle_lim, max_angle_lim):
+            if self.SECTION_LIMITS[-1] == (min_angle_lim, max_angle_lim):
                 switch_lectures = True
 
             min_distance = self.get_min_distance(scan_msg, min_index, max_index, switch_lectures)
@@ -71,8 +71,8 @@ class Controller_Node(Node):
         # TODO forward neural network            
             
         
-        
-    def get_min_distance(self, scan_msg, min_index, max_index, switch_lectures):
+    @staticmethod
+    def get_min_distance(scan_msg, min_index, max_index, switch_lectures):
 
         if switch_lectures:
             section_lectures = scan_msg.ranges[0:min_index] + scan_msg.ranges[max_index:]
