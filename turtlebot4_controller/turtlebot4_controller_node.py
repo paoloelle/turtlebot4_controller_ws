@@ -21,12 +21,12 @@ class Controller_Node(Node):
             qos_profile_sensor_data
         )
 
-        #self.hazard_subscription= self.create_subscription(
-        #    HazardDetectionVector,
-        #    'hazard_detection',
-        #    self.hazard_callback,
-        #    qos_profile_sensor_data
-        #)
+        self.hazard_subscription= self.create_subscription(
+            HazardDetectionVector,
+            'hazard_detection',
+            self.hazard_callback,
+            qos_profile_sensor_data
+        )
 
 
         self.filtered_scan = []
@@ -34,15 +34,30 @@ class Controller_Node(Node):
         self.SECTION_LIMITS = [(-pi/8, pi/8), (pi/8, 3/8*pi), (3/8*pi, 5/8*pi),
                                (5/8*pi, 7/8*pi), (-pi/8, -3/8*pi), (-3/8*pi, -5/8*pi),
                                (-5/8*pi, -7/8*pi), (-7/8*pi, 7/8*pi)]
+        
+        self.bumper = 0 # 0 = no collision, 1 = collision
 
         #self.ann_controller = controller(input_size, hidden_size, output_size)
 
         
         
-    # TODO
-    #def hazard_callback(self, msg): # care only about bumper collision
-        #print('')
+    
+    def hazard_callback(self, hazard_msg): # care only about bumper collision
 
+        if not hazard_msg.detections:
+            self.bumper = 0
+            
+        else:
+            for hazards in hazard_msg.detections:
+                if hazards.type == 1:
+                    self.bumper = 1
+                else:
+                    self.bumper = 0
+
+        # TODO forward neural network
+        
+
+        
 
 
     def scan_callback(self, scan_msg):
@@ -67,7 +82,8 @@ class Controller_Node(Node):
 
             self.filtered_scan.append(min_distance)
     
-        print(self.filtered_scan)
+        
+        
         # TODO forward neural network            
             
         
