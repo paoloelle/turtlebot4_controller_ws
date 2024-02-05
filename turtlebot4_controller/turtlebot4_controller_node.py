@@ -66,14 +66,13 @@ class Controller_Node(Node):
             min_distance = self.get_min_distance(scan_msg, min_index, max_index, switch_lectures)
 
             self.filtered_scan.append(min_distance)
-
+    
+        print(self.filtered_scan)
         # TODO forward neural network            
             
         
         
     def get_min_distance(self, scan_msg, min_index, max_index, switch_lectures):
-
-        # FIXME error on line 80
 
         if switch_lectures:
             section_lectures = scan_msg.ranges[0:min_index] + scan_msg.ranges[max_index:]
