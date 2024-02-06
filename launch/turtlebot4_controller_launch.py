@@ -16,8 +16,11 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package = 'turtlebot4_controller',
             executable='turtlebot4_controller_node',
+            parameters=[
+                {'weights': '[1.0]*(9*8 + 8*2)'}
+                ]
         ),
-
+        
         DeclareLaunchArgument(
             'world',
             default_value='arena'
