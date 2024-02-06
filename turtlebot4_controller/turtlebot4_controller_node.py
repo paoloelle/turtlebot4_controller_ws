@@ -31,7 +31,7 @@ class Controller_Node(Node):
         self.twist_publisher = self.create_publisher(Twist, 'cmd_vel', qos_profile_sensor_data)
 
 
-        self.filtered_scan = [1]*8 # initialize with a dummy lecture
+        self.filtered_scan = [1.0]*8 # initialize with a dummy lecture
         
         self.SECTION_LIMITS = [(-pi/8, pi/8), (pi/8, 3/8*pi), (3/8*pi, 5/8*pi),
                                (5/8*pi, 7/8*pi), (-pi/8, -3/8*pi), (-3/8*pi, -5/8*pi),
@@ -40,6 +40,8 @@ class Controller_Node(Node):
         self.bumper = 0 # 0 = no collision, 1 = collision
 
         self.ann_controller = ANN_controller(input_size, hidden_size, output_size)
+
+        self.declare_parameter('weights', [0.0]*(input_size*hidden_size + hidden_size*output_size))
 
         
         
@@ -145,15 +147,14 @@ def main(args=None):
 
     rclpy.init(args=args)
 
-    INPUT_SIZE = 9 # BUMPER + LASER SCAN FILTERED
+    INPUT_SIZE = 9 # BUMPER (1) + LASER SCAN FILTERED (8)
     HIDDEN_SIZE = 8
     OUTPUT_SIZE = 2 # linear vel x, angular vel z
 
     controller_node = Controller_Node(INPUT_SIZE, HIDDEN_SIZE, OUTPUT_SIZE)
     
     
-    #weights = controller_node.get_parameter('weights').get_parameter_value(). #TODO 
-    weights = [1]*(INPUT_SIZE*HIDDEN_SIZE + HIDDEN_SIZE*OUTPUT_SIZE)
+    weights = controller_node.get_parameter('weights').get_parameter_value().double_array_value
 
     controller_node.ann_controller.upload_parameters(weights)
 
