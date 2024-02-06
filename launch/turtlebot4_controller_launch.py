@@ -11,38 +11,7 @@ from launch.substitutions import LaunchConfiguration
 # save the number of object stored 
 
 def generate_launch_description():
-    return launch.LaunchDescription([
 
-        launch_ros.actions.Node(
-            package = 'turtlebot4_controller',
-            executable='turtlebot4_controller_node',
-            parameters=[
-                {'weights': '[1.0]*(9*8 + 8*2)'}
-                ]
-        ),
-        
-        DeclareLaunchArgument(
-            'world',
-            default_value='arena'
-        ),
-
-        DeclareLaunchArgument(
-            'z',
-            default_value='0.2'
-        ),
-
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([
-                FindPackageShare("turtlebot4_ignition_bringup"), '/launch', '/turtlebot4_ignition.launch.py'
-            ]),
-
-        launch_arguments={
-            'world':LaunchConfiguration('world'),
-            'z':LaunchConfiguration('z')
-        }.items()
-
-        )
 
         
         
-    ])
