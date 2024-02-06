@@ -1,17 +1,22 @@
-import launch
-import launch_ros.actions
-from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch_ros.substitutions import FindPackageShare
-from launch.substitutions import LaunchConfiguration
+import os
 
-# TODO
-# launch file for the gazebo simulation
-# launch the node to control the turtlebot with the weights from the neuroevolution
-# save the number of object stored 
+from ament_index_python.packages import get_package_share_directory
+
+from launch import LaunchDescription
+from launch_ros.actions import Node
 
 def generate_launch_description():
+    config = os.path.join(
+        get_package_share_directory('turtlebot4_controller'),
+        'config',
+        'weights.yaml'
+    )
 
-
-        
-        
+    return LaunchDescription([
+        Node(
+            package='turtlebot4_controller',
+            executable='turtlebot4_controller_node',
+            name='ANN_controller',
+            parameters=[config]            
+        )
+    ])
