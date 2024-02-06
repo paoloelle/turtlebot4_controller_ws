@@ -31,7 +31,7 @@ class Controller_Node(Node):
         self.twist_publisher = self.create_publisher(Twist, 'cmd_vel', qos_profile_sensor_data)
 
 
-        self.filtered_scan = []
+        self.filtered_scan = [1]*8 # initialize with a dummy lecture
         
         self.SECTION_LIMITS = [(-pi/8, pi/8), (pi/8, 3/8*pi), (3/8*pi, 5/8*pi),
                                (5/8*pi, 7/8*pi), (-pi/8, -3/8*pi), (-3/8*pi, -5/8*pi),
@@ -53,11 +53,12 @@ class Controller_Node(Node):
             for hazards in hazard_msg.detections:
                 if hazards.type == 1:
                     self.bumper = 1
+                    self.get_logger().warning('collision')
                 else:
                     self.bumper = 0
 
         
-        # forward neural network
+        # neural network prediction
         lin_vel, ang_vel = self.ann_controller.forward([self.bumper] + self.filtered_scan)
         self.publish_twist(lin_vel, ang_vel)
 
@@ -83,8 +84,10 @@ class Controller_Node(Node):
             min_distance = self.get_min_distance(scan_msg, min_index, max_index, switch_lectures)
 
             self.filtered_scan.append(min_distance)
-    
-        # forward neural network
+
+        #print(self.filtered_scan)
+
+        # neural network prediction
         lin_vel, ang_vel = self.ann_controller.forward([self.bumper] + self.filtered_scan)
         self.publish_twist(lin_vel, ang_vel)
 
@@ -97,6 +100,7 @@ class Controller_Node(Node):
         twist_msg.angular.z = ang_vel
 
         self.twist_publisher.publish(twist_msg)
+        self.get_logger().info('\nLinear vel: "%s" \nAngular vel:  "%s"' % (lin_vel, ang_vel))
 
             
         
@@ -147,14 +151,11 @@ def main(args=None):
 
     controller_node = Controller_Node(INPUT_SIZE, HIDDEN_SIZE, OUTPUT_SIZE)
     
-
     
     #weights = controller_node.get_parameter('weights').get_parameter_value(). #TODO 
-    #weights = [1]*(INPUT_SIZE*HIDDEN_SIZE + HIDDEN_SIZE*OUTPUT_SIZE)
+    weights = [1]*(INPUT_SIZE*HIDDEN_SIZE + HIDDEN_SIZE*OUTPUT_SIZE)
 
     controller_node.ann_controller.upload_parameters(weights)
-
-
 
     rclpy.spin(controller_node)
     
