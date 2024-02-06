@@ -3,9 +3,10 @@ from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 from rclpy.qos import qos_profile_sensor_data
 from irobot_create_msgs.msg import HazardDetectionVector
-from ann_controller import ANN_controller
+from turtlebot4_controller.ann_controller import ANN_controller
 from math import pi
 from geometry_msgs.msg import Twist
+import numpy as np
 
 class Controller_Node(Node):
 
@@ -27,7 +28,7 @@ class Controller_Node(Node):
             qos_profile_sensor_data
         )
 
-        self.twist_publisher = self.create_publisher(Twist, 'cmd_vel_check', qos_profile_sensor_data)
+        self.twist_publisher = self.create_publisher(Twist, 'cmd_vel', qos_profile_sensor_data)
 
 
         self.filtered_scan = []
@@ -57,12 +58,8 @@ class Controller_Node(Node):
 
         
         # forward neural network
-        lin_vel, ang_vel = self.ann_controller.forward(self.bumper, self.filtered_scan)
-                    
-        
-        
-
-        
+        lin_vel, ang_vel = self.ann_controller.forward([self.bumper] + self.filtered_scan)
+        self.publish_twist(lin_vel, ang_vel)
 
 
     def scan_callback(self, scan_msg):
@@ -88,11 +85,13 @@ class Controller_Node(Node):
             self.filtered_scan.append(min_distance)
     
         # forward neural network
-        lin_vel, ang_vel = self.ann_controller.forward(self.bumper, self.filtered_scan)
+        lin_vel, ang_vel = self.ann_controller.forward([self.bumper] + self.filtered_scan)
+        self.publish_twist(lin_vel, ang_vel)
+
 
     
     def publish_twist(self, lin_vel, ang_vel):
-        
+
         twist_msg = Twist()
         twist_msg.linear.x = lin_vel
         twist_msg.angular.z = ang_vel
@@ -151,7 +150,7 @@ def main(args=None):
 
     
     #weights = controller_node.get_parameter('weights').get_parameter_value(). #TODO 
-    weights = [1]*(INPUT_SIZE*HIDDEN_SIZE + HIDDEN_SIZE*OUTPUT_SIZE)
+    #weights = [1]*(INPUT_SIZE*HIDDEN_SIZE + HIDDEN_SIZE*OUTPUT_SIZE)
 
     controller_node.ann_controller.upload_parameters(weights)
 
