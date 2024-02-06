@@ -1,12 +1,11 @@
-
-
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 from rclpy.qos import qos_profile_sensor_data
-from irobot_create_msgs.msg import HazardDetection, HazardDetectionVector
-#import turtlebot4_controller.ANN_controller as controller
+from irobot_create_msgs.msg import HazardDetectionVector
+from ann_controller import ANN_controller
 from math import pi
+from geometry_msgs.msg import Twist
 
 class Controller_Node(Node):
 
@@ -28,6 +27,8 @@ class Controller_Node(Node):
             qos_profile_sensor_data
         )
 
+        self.twist_publisher = self.create_publisher(Twist, 'cmd_vel_check', qos_profile_sensor_data)
+
 
         self.filtered_scan = []
         
@@ -37,7 +38,7 @@ class Controller_Node(Node):
         
         self.bumper = 0 # 0 = no collision, 1 = collision
 
-        #self.ann_controller = controller(input_size, hidden_size, output_size)
+        self.ann_controller = ANN_controller(input_size, hidden_size, output_size)
 
         
         
@@ -54,7 +55,11 @@ class Controller_Node(Node):
                 else:
                     self.bumper = 0
 
-        # TODO forward neural network
+        
+        # forward neural network
+        lin_vel, ang_vel = self.ann_controller.forward(self.bumper, self.filtered_scan)
+                    
+        
         
 
         
@@ -82,9 +87,18 @@ class Controller_Node(Node):
 
             self.filtered_scan.append(min_distance)
     
+        # forward neural network
+        lin_vel, ang_vel = self.ann_controller.forward(self.bumper, self.filtered_scan)
+
+    
+    def publish_twist(self, lin_vel, ang_vel):
         
-        
-        # TODO forward neural network            
+        twist_msg = Twist()
+        twist_msg.linear.x = lin_vel
+        twist_msg.angular.z = ang_vel
+
+        self.twist_publisher.publish(twist_msg)
+
             
         
     @staticmethod
@@ -102,9 +116,7 @@ class Controller_Node(Node):
         
 
         return min(normalized_lectures)
-
-        
-        
+               
 
 
     @staticmethod
@@ -126,18 +138,25 @@ class Controller_Node(Node):
 
 
 
-
-
-
-
 def main(args=None):
 
     rclpy.init(args=args)
 
-    controller_node = Controller_Node(202, 8, 2)
-    #weights = controller_node.get_parameter('weights').get_parameter_value(). #TODO
+    INPUT_SIZE = 9 # BUMPER + LASER SCAN FILTERED
+    HIDDEN_SIZE = 8
+    OUTPUT_SIZE = 2 # linear vel x, angular vel z
 
-    #controller_node.ann_controller.upload_parameters(weights)# parameters from neuroevolution
+    controller_node = Controller_Node(INPUT_SIZE, HIDDEN_SIZE, OUTPUT_SIZE)
+    
+
+    
+    #weights = controller_node.get_parameter('weights').get_parameter_value(). #TODO 
+    weights = [1]*(INPUT_SIZE*HIDDEN_SIZE + HIDDEN_SIZE*OUTPUT_SIZE)
+
+    controller_node.ann_controller.upload_parameters(weights)
+
+
+
     rclpy.spin(controller_node)
     
     controller_node.destroy_node()
