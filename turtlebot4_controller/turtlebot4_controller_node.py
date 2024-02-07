@@ -42,7 +42,7 @@ class Controller_Node(Node):
         self.ann_controller = ANN_controller(input_size, hidden_size, output_size)
 
         # weights for the neural network with default values
-        self.declare_parameter('weights', [0.0]*(input_size*hidden_size + hidden_size*output_size))
+        self.declare_parameter('weights', [0.5]*(input_size*hidden_size + hidden_size*output_size))
 
         
         

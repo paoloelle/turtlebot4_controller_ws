@@ -11,19 +11,30 @@ from launch.substitutions import LaunchConfiguration, TextSubstitution
 
 def generate_launch_description():
 
-    weights_arg = DeclareLaunchArgument(
-        'weights', default_value=TextSubstitution(text='[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]')
+    config = os.path.join(
+        get_package_share_directory('turtlebot4_controller'),
+        'config',
+        'param.yaml'
     )
+
+    #weights_arg = DeclareLaunchArgument(
+    #    'weights', default_value=TextSubstitution(text='[0.6, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]')
+    #)
 
 
     return LaunchDescription([
-        weights_arg,
+        #weights_arg,
         Node(
             package='turtlebot4_controller',
             executable='turtlebot4_controller_node',
+            namespace='turtlesim',
             name='ann_controller',
-            parameters=[{
-                'weights':LaunchConfiguration('weights')
-            }]
+            parameters=[config
+                
+                #{
+                #'weights':LaunchConfiguration('weights')
+               
+            #}
+            ]
         )
     ])
