@@ -117,7 +117,7 @@ class Controller_Node(Node):
 
         # normalise lectures between 0 and 1
         normalized_lectures = [(x - scan_msg.range_min) / (scan_msg.range_max - scan_msg.range_min) for x in section_lectures]
-        normalized_lectures = [scan_msg.range_min if x==float('inf') else x for x in normalized_lectures] # remove inf values
+        normalized_lectures = [scan_msg.range_max if x==float('inf') else x for x in normalized_lectures] # remove inf values
         
 
         return min(normalized_lectures)
