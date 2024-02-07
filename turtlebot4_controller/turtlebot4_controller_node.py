@@ -14,6 +14,7 @@ class Controller_Node(Node):
 
         super().__init__('ann_controller')
 
+        # subscribers
         self.scan_subscription = self.create_subscription(
             LaserScan,
             'scan',
@@ -28,6 +29,7 @@ class Controller_Node(Node):
             qos_profile_sensor_data
         )
 
+        # publisher
         self.twist_publisher = self.create_publisher(Twist, 'cmd_vel', qos_profile_sensor_data)
 
 
@@ -153,7 +155,7 @@ def main(args=None):
 
     controller_node = Controller_Node(INPUT_SIZE, HIDDEN_SIZE, OUTPUT_SIZE)
     
-    
+
     weights = controller_node.get_parameter('weights').get_parameter_value().double_array_value
 
     controller_node.ann_controller.upload_parameters(weights)
