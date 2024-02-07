@@ -5,8 +5,10 @@ from random import uniform
 import subprocess
 import time
 
+SIMULATION_TIME = 60
 
-def run(SIMULATION_TIME):  # get the fitness value for every individual and perform the evolution
+
+def run():  # get the fitness value for every individual and perform the evolution
 
     pop = toolbox.population(n=50)  # create population
 
@@ -53,17 +55,14 @@ def run(SIMULATION_TIME):  # get the fitness value for every individual and perf
 
 
 def get_objects_collected(individual):
-    #subprocess.run(['roslaunch', 'turtlebot4controller', 'turtlebot4_controller_launch.py'])
-    # time.sleep(simulation_time)
+    # subprocess.run(['roslaunch', 'turtlebot4controller', 'turtlebot4_controller_launch.py'])
+    # time.sleep(SIMULATION_TIME)
     # TODO capire come ottenere il numero di oggetti raccoliti
 
-    return 1
+    return [random.randint(0, 30)]
 
 
 if __name__ == "__main__":
-
-    SIMULATION_TIME = 60
-
     INPUT_SIZE = 9
     HIDDEN_SIZE = 8
     OUTPUT_SIZE = 2
@@ -91,4 +90,4 @@ if __name__ == "__main__":
     toolbox.register("select", tools.selTournament, tournsize=3)
     toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=1, indpb=100)
 
-    run(SIMULATION_TIME)
+    run()
