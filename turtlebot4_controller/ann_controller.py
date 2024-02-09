@@ -32,6 +32,6 @@ class ANN_controller:
         
         # activation function output layer
         Z2 = np.dot(self.W2, A1) #+ b2
-        A2 = Z2 # regression problem, linear function
+        A2 = np.tanh(Z2)
 
         return A2

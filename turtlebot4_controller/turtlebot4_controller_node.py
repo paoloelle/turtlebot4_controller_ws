@@ -10,6 +10,10 @@ import numpy as np
 
 class Controller_Node(Node):
 
+    #turtlebot 4 velocities
+    MAX_LIN_VEL = 0.46 # 0.46 m/s
+    MAX_ANG_VEL = 1.90 # 1.90 rad/s
+
     def __init__(self, input_size, hidden_size, output_size):
 
         super().__init__('ann_controller')
@@ -32,8 +36,9 @@ class Controller_Node(Node):
         # publisher
         self.twist_publisher = self.create_publisher(Twist, 'cmd_vel', qos_profile_sensor_data)
 
-
-        self.filtered_scan = [1.0]*8 # initialize with a dummy lecture
+        # Initialize this variable to be sure that until the first scan message isn't published no Twist message is published on cmd_vel
+        self.recevid_first_scan = False
+        self.filtered_scan = []
         
         self.SECTION_LIMITS = [(-pi/8, pi/8), (pi/8, 3/8*pi), (3/8*pi, 5/8*pi),
                                (5/8*pi, 7/8*pi), (-pi/8, -3/8*pi), (-3/8*pi, -5/8*pi),
@@ -43,8 +48,6 @@ class Controller_Node(Node):
 
         self.ann_controller = ANN_controller(input_size, hidden_size, output_size)
 
-
-        
         
     
     def hazard_callback(self, hazard_msg): # care only about bumper collision
@@ -62,8 +65,11 @@ class Controller_Node(Node):
 
         
         # neural network prediction
-        lin_vel, ang_vel = self.ann_controller.forward([self.bumper] + self.filtered_scan)
-        self.publish_twist(lin_vel, ang_vel)
+        if not self.recevid_first_scan:
+            self.get_logger().warning('Waiting first scan lecture')
+        else:
+            lin_vel, ang_vel = self.get_target_vel()
+            self.publish_twist(lin_vel, ang_vel)
 
 
     def scan_callback(self, scan_msg):
@@ -72,8 +78,9 @@ class Controller_Node(Node):
         # split laser scan lectures in 8 sections as follows:
         # [-pi/8, pi/8], [pi/8, 3/8 pi], [3/8 pi, 5/8 pi], [5/8 pi, 7/8 pi]
         # [-pi/8, -3/8 pi], [-3/8 pi, -5/8 pi], [-5/8 pi, -7/8 pi], [-7/8 pi, 7/8 pi]
-
-        switch_lectures = False  
+        
+        self.recevid_first_scan = True
+        switch_lectures = False 
         self.filtered_scan.clear() # remove previous values
 
         for angle_limits in self.SECTION_LIMITS:
@@ -85,14 +92,26 @@ class Controller_Node(Node):
                 switch_lectures = True
 
             min_distance = self.get_min_distance(scan_msg, min_index, max_index, switch_lectures)
-
+            
             self.filtered_scan.append(min_distance)
 
 
         # neural network prediction
-        lin_vel, ang_vel = self.ann_controller.forward([self.bumper] + self.filtered_scan)
-        self.publish_twist(lin_vel, ang_vel)
+        if not self.recevid_first_scan:
+            self.get_logger().warning('Waiting first scan lecture')
+        else:
+            lin_vel, ang_vel = self.get_target_vel()
+            self.publish_twist(lin_vel, ang_vel)    
 
+
+
+
+    def get_target_vel(self):
+
+        lin_vel, ang_vel = self.ann_controller.forward([self.bumper] + self.filtered_scan)
+        lin_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_LIN_VEL, Controller_Node.MAX_LIN_VEL)
+        ang_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_ANG_VEL, Controller_Node.MAX_ANG_VEL)
+        return lin_vel, ang_vel
 
     
     def publish_twist(self, lin_vel, ang_vel):
@@ -101,8 +120,18 @@ class Controller_Node(Node):
         twist_msg.linear.x = lin_vel
         twist_msg.angular.z = ang_vel
 
+
         self.twist_publisher.publish(twist_msg)
         self.get_logger().info('\nLinear vel: "%s" \nAngular vel:  "%s"' % (lin_vel, ang_vel))
+
+            
+
+
+
+    @staticmethod
+    def map_value_vel_limits(value, vel_lim_min, vel_lim_max):
+        return (value - vel_lim_max)/(vel_lim_max-vel_lim_min)
+
 
             
         
