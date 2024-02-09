@@ -1,0 +1,10 @@
+<launch>
+
+    <node pkg='turtlebot4_controller' exec='turtlebot4_controller_node' />
+
+    <include file='$(find-pkg-share turtlebot4_ignition_bringup)/launch/turtlebot4_ignition.launch.py'>
+        <arg name='world' value='arena'/>
+    </include>
+
+
+</launch>
