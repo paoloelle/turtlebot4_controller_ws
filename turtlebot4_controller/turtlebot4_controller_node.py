@@ -14,6 +14,7 @@ class Controller_Node(Node):
 
         super().__init__('ann_controller')
 
+        # subscribers
         self.scan_subscription = self.create_subscription(
             LaserScan,
             'scan',
@@ -28,6 +29,7 @@ class Controller_Node(Node):
             qos_profile_sensor_data
         )
 
+        # publisher
         self.twist_publisher = self.create_publisher(Twist, 'cmd_vel', qos_profile_sensor_data)
 
 
@@ -151,10 +153,12 @@ def main(args=None):
 
     controller_node = Controller_Node(INPUT_SIZE, HIDDEN_SIZE, OUTPUT_SIZE)
     
+
     # upload weights from param.txt
     param_path = '/home/pleopardi/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt' #FIXME try to pass relative path
     weights = open(param_path).read()
     weights = np.array(weights.split(','), np.float64)
+
 
     controller_node.ann_controller.upload_parameters(weights)
 

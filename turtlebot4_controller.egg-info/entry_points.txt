@@ -1,0 +1,2 @@
+[console_scripts]
+turtlebot4_controller_node = turtlebot4_controller.turtlebot4_controller_node:main

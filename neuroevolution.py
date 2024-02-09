@@ -2,9 +2,13 @@ import random
 
 from deap import creator, base, tools
 from random import uniform
-import os
+import subprocess
+import time
 
-def main():  # get the fitness value for every individual and perform the evolution
+SIMULATION_TIME = 60
+
+
+def run():  # get the fitness value for every individual and perform the evolution
 
     pop = toolbox.population(n=50)  # create population
 
@@ -51,31 +55,39 @@ def main():  # get the fitness value for every individual and perform the evolut
 
 
 def get_objects_collected(individual):
-    # os("ros2 launch turtlebot4_ignition_bringup turtlebot4_ignition.launch.py world:=arena") # write a launch file that launch also controller node
-    # use subprocess module
+    # subprocess.run(['roslaunch', 'turtlebot4controller', 'turtlebot4_controller_launch.py'])
+    # time.sleep(SIMULATION_TIME)
+    # TODO capire come ottenere il numero di oggetti raccoliti
 
-    return 
+    return [random.randint(0, 30)]
 
 
-creator.create("FitnessMax", base.Fitness, weights=(1.0,))
-creator.create("Individual", list, fitness=creator.FitnessMax)
+if __name__ == "__main__":
+    INPUT_SIZE = 9
+    HIDDEN_SIZE = 8
+    OUTPUT_SIZE = 2
 
-toolbox = base.Toolbox()
+    creator.create("FitnessMax", base.Fitness, weights=(1.0,))
+    creator.create("Individual", list, fitness=creator.FitnessMax)
 
-# attribute generator
-toolbox.register("attr_weights", uniform, -0.5, 0.5)
+    toolbox = base.Toolbox()
 
-# structure initializers
-# let's assume the I have like 4 input neurons, 8 hidden neurons, and 3 output neurons (67 parameters for a genotype)
-# define the structure of a genome
-toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_weights, 67)
-# define the population structure
-toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+    # attribute generator
+    toolbox.register("attr_weights", uniform, -0.5, 0.5)
 
-toolbox.register("evaluate", get_objects_collected)
+    # structure initializers
 
-# genetic operators (tournament selection, no elitism, small mutation)
-toolbox.register("select", tools.selTournament, tournsize=3)
-toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=1, indpb=100)
+    # now I don't take into account bias, only connections between nodes
+    number_of_paramters = INPUT_SIZE * HIDDEN_SIZE + HIDDEN_SIZE * OUTPUT_SIZE
+    # define the structure of a genome
+    toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_weights, number_of_paramters)
+    # define the population structure
+    toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
-main()
+    toolbox.register("evaluate", get_objects_collected)
+
+    # genetic operators (tournament selection, no elitism, small mutation)
+    toolbox.register("select", tools.selTournament, tournsize=3)
+    toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=1, indpb=100)
+
+    run()

@@ -1,0 +1,8 @@
+Metadata-Version: 2.1
+Name: turtlebot4-controller
+Version: 0.0.0
+Summary: TODO: Package description
+Maintainer: pleopardi
+Maintainer-email: paolo.leopardi@uni-konstanz.de
+License: TODO: License declaration
+Requires-Dist: setuptools
