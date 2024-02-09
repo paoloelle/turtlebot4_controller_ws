@@ -1,45 +1,40 @@
-import launch
-import launch_ros.actions
-from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch_ros.substitutions import FindPackageShare
-from launch.substitutions import LaunchConfiguration
+import os
 
-# TODO
-# launch file for the gazebo simulation
-# launch the node to control the turtlebot with the weights from the neuroevolution
-# save the number of object stored 
+from ament_index_python.packages import get_package_share_directory
+
+
+from launch import LaunchDescription
+from launch_ros.actions import Node
+
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration, TextSubstitution
 
 def generate_launch_description():
-    return launch.LaunchDescription([
 
-        launch_ros.actions.Node(
-            package = 'turtlebot4_controller',
+    config = os.path.join(
+        get_package_share_directory('turtlebot4_controller'),
+        'config',
+        'param.yaml'
+    )
+
+    #weights_arg = DeclareLaunchArgument(
+    #    'weights', default_value=TextSubstitution(text='[0.6, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]')
+    #)
+
+
+    return LaunchDescription([
+        #weights_arg,
+        Node(
+            package='turtlebot4_controller',
             executable='turtlebot4_controller_node',
-        ),
-
-        DeclareLaunchArgument(
-            'world',
-            default_value='arena'
-        ),
-
-        DeclareLaunchArgument(
-            'z',
-            default_value='0.2'
-        ),
-
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([
-                FindPackageShare("turtlebot4_ignition_bringup"), '/launch', '/turtlebot4_ignition.launch.py'
-            ]),
-
-        launch_arguments={
-            'world':LaunchConfiguration('world'),
-            'z':LaunchConfiguration('z')
-        }.items()
-
+            namespace='turtlesim',
+            name='ann_controller',
+            parameters=[config
+                
+                #{
+                #'weights':LaunchConfiguration('weights')
+               
+            #}
+            ]
         )
-
-        
-        
     ])

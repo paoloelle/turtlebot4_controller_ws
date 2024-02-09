@@ -43,7 +43,6 @@ class Controller_Node(Node):
 
         self.ann_controller = ANN_controller(input_size, hidden_size, output_size)
 
-        self.declare_parameter('weights', [0.0]*(input_size*hidden_size + hidden_size*output_size))
 
         
         
@@ -89,7 +88,6 @@ class Controller_Node(Node):
 
             self.filtered_scan.append(min_distance)
 
-        #print(self.filtered_scan)
 
         # neural network prediction
         lin_vel, ang_vel = self.ann_controller.forward([self.bumper] + self.filtered_scan)
@@ -156,7 +154,11 @@ def main(args=None):
     controller_node = Controller_Node(INPUT_SIZE, HIDDEN_SIZE, OUTPUT_SIZE)
     
 
-    weights = controller_node.get_parameter('weights').get_parameter_value().double_array_value
+    # upload weights from param.txt
+    param_path = '/home/pleopardi/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt' #FIXME try to pass relative path
+    weights = open(param_path).read()
+    weights = np.array(weights.split(','), np.float64)
+
 
     controller_node.ann_controller.upload_parameters(weights)
 
