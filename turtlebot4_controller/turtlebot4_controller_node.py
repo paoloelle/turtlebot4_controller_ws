@@ -191,13 +191,11 @@ def main(args=None):
 
     controller_node.ann_controller.upload_parameters(weights)
 
-    try:
-        rclpy.spin(controller_node)
-    except KeyboardInterrupt:
-        print('Keyboard interrupt')
-    finally:
-        controller_node.destroy_node()
-        rclpy.shutdown()
+    rclpy.spin(controller_node)
+ 
+    controller_node.destroy_node()
+    rclpy.shutdown()
+        
 
 if __name__ == '__main__':
     main()
