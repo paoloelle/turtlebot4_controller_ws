@@ -23,7 +23,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'turtlebot4_controller_node = turtlebot4_controller.turtlebot4_controller_node:main'
+            'turtlebot4_controller_node = turtlebot4_controller.turtlebot4_controller_node:main',
+            'object_counter_node = turtlebot4_controller.object_counter_node:main'
         ],
     },
 )

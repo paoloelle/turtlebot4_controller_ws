@@ -10,7 +10,7 @@ import numpy as np
 
 class Controller_Node(Node):
 
-    #turtlebot 4 velocities
+    #turtlebot 4 max velocities
     MAX_LIN_VEL = 0.46 # 0.46 m/s
     MAX_ANG_VEL = 1.90 # 1.90 rad/s
 
