@@ -2,16 +2,21 @@
 
     <!--<node pkg='turtlebot4_controller' exec='turtlebot4_controller_node'/>-->
 
-    <node pkg='turtlebot4_controller' exec='object_counter_node'/>
-
-    <node pkg='ros_ign_bridge' exec='parameter_bridge'
+    <!--<node pkg='turtlebot4_controller' exec='object_counter_node'/>-->
+    
+    <!--<node pkg='ros_ign_bridge' exec='parameter_bridge'
         args='/model/objects/pose@geometry_msgs/msg/PoseArray[ignition.msgs.Pose_V'>
     </node>
+
+    <node pkg='ros_ign_bridge' exec='parameter_bridge'
+        args='/model/lights/pose@geometry_msgs/msg/PoseArray[ignition.msgs.Pose_V'>
+    </node>-->
+
 
     <include file='$(find-pkg-share turtlebot4_ignition_bringup)/launch/turtlebot4_ignition.launch.py'>
         <arg name='world' value='arena'/>
         <arg name='z' value='0.2'/>
     </include>
 
-
 </launch>
+

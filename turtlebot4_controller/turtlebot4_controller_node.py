@@ -44,7 +44,14 @@ class Controller_Node(Node):
                                (5/8*pi, 7/8*pi), (-pi/8, -3/8*pi), (-3/8*pi, -5/8*pi),
                                (-5/8*pi, -7/8*pi), (-7/8*pi, 7/8*pi)]
         
-        self.bumper = 0 # 0 = no collision, 1 = collision
+        # list for bumper areas
+        self.bumper_area =  {
+            "bump_right" : False,
+            "bump_front_right": False,
+            "bump_front_center": False,
+            "bump_front_left": False,
+            "bump_left": False
+        }
 
         self.ann_controller = ANN_controller(input_size, hidden_size, output_size)
 
@@ -52,24 +59,30 @@ class Controller_Node(Node):
     
     def hazard_callback(self, hazard_msg): # care only about bumper collision
 
+        #TODO capire come gestire quando ho due aree attivate dal bumper
+
         if not hazard_msg.detections:
-            self.bumper = 0
+            for bumper_index in self.bumper_area:
+                self.bumper_area[bumper_index] = False
             
         else:
-            for hazards in hazard_msg.detections:
-                if hazards.type == 1:
-                    self.bumper = 1
-                    self.get_logger().warning('collision')
+            for hazard in hazard_msg.detections:
+                if hazard.type == 1: # take care only of the bumper collision
+                    self.bumper_area[hazard.header.frame_id] = True
+                    
                 else:
-                    self.bumper = 0
+                    for bumper_index in self.bumper_area:
+                        self.bumper_area[bumper_index] = False
+
+        print(self.bumper_area)
 
         
         # neural network prediction
-        if not self.recevid_first_scan:
-            self.get_logger().warning('Waiting first scan lecture')
-        else:
-            lin_vel, ang_vel = self.get_target_vel()
-            self.publish_twist(lin_vel, ang_vel)
+        #if not self.recevid_first_scan:
+        #    self.get_logger().warning('Waiting first scan lecture')
+        #else:
+        #    lin_vel, ang_vel = self.get_target_vel()
+        #    self.publish_twist(lin_vel, ang_vel)
 
 
     def scan_callback(self, scan_msg):
@@ -80,7 +93,7 @@ class Controller_Node(Node):
         # [-pi/8, -3/8 pi], [-3/8 pi, -5/8 pi], [-5/8 pi, -7/8 pi], [-7/8 pi, 7/8 pi]
         
         self.recevid_first_scan = True
-        switch_lectures = False 
+        switch_lectures = False #
         self.filtered_scan.clear() # remove previous values
 
         for angle_limits in self.SECTION_LIMITS:
@@ -97,11 +110,11 @@ class Controller_Node(Node):
 
 
         # neural network prediction
-        if not self.recevid_first_scan:
-            self.get_logger().warning('Waiting first scan lecture')
-        else:
-            lin_vel, ang_vel = self.get_target_vel()
-            self.publish_twist(lin_vel, ang_vel)    
+        #if not self.recevid_first_scan:
+        #    self.get_logger().warning('Waiting first scan lecture')
+        #else:
+        #    lin_vel, ang_vel = self.get_target_vel()
+        #    self.publish_twist(lin_vel, ang_vel)    
 
 
 
@@ -184,12 +197,12 @@ def main(args=None):
     
 
     # upload weights from param.txt
-    param_path = '/home/pleopardi/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt' #FIXME sdon't use absolute path
-    weights = open(param_path).read()
-    weights = np.array(weights.split(','), np.float64)
+    #param_path = '/home/pleopardi/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt' #FIXME don't use absolute path
+    #weights = open(param_path).read()
+    #weights = np.array(weights.split(','), np.float64)
 
 
-    controller_node.ann_controller.upload_parameters(weights)
+    #controller_node.ann_controller.upload_parameters(weights)
 
     rclpy.spin(controller_node)
  
