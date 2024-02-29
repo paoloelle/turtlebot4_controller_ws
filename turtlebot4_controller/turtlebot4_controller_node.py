@@ -44,8 +44,8 @@ class Controller_Node(Node):
                                (5/8*pi, 7/8*pi), (-pi/8, -3/8*pi), (-3/8*pi, -5/8*pi),
                                (-5/8*pi, -7/8*pi), (-7/8*pi, 7/8*pi)]
         
-        # list for bumper areas
-        self.bumper_area =  {
+        # list of bumper areas
+        self.bumper_areas =  {
             "bump_right" : False,
             "bump_front_right": False,
             "bump_front_center": False,
@@ -53,29 +53,29 @@ class Controller_Node(Node):
             "bump_left": False
         }
 
+        self.bumper_areas_triggered = set() # save bumper areas triggered at every iteraction
+
         self.ann_controller = ANN_controller(input_size, hidden_size, output_size)
 
         
     
     def hazard_callback(self, hazard_msg): # care only about bumper collision
 
-        #TODO capire come gestire quando ho due aree attivate dal bumper
+        self.bumper_areas_triggered.clear()
 
-        if not hazard_msg.detections:
-            for bumper_index in self.bumper_area:
-                self.bumper_area[bumper_index] = False
-            
+        if not hazard_msg.detections: # if there aren't hazard detected
+            for bumper_index in self.bumper_areas:
+                self.bumper_areas[bumper_index] = False
+        
+        # build the set of bumper areas wich were triggered 
         else:
             for hazard in hazard_msg.detections:
-                if hazard.type == 1: # take care only of the bumper collision
-                    self.bumper_area[hazard.header.frame_id] = True
-                    
-                else:
-                    for bumper_index in self.bumper_area:
-                        self.bumper_area[bumper_index] = False
-
-        print(self.bumper_area)
-
+                if hazard.type == 1: # this means bumper triggered
+                    self.bumper_areas_triggered.add(hazard.header.frame_id)
+            
+            # check the bumper area triggered and update the dictionary
+            for bumper_area in self.bumper_areas:
+                self.bumper_areas[bumper_area] = bumper_area in self.bumper_areas_triggered
         
         # neural network prediction
         #if not self.recevid_first_scan:
@@ -120,7 +120,8 @@ class Controller_Node(Node):
 
 
     def get_target_vel(self):
-
+        
+        # TODO modify the forward of ann 
         lin_vel, ang_vel = self.ann_controller.forward([self.bumper] + self.filtered_scan)
         lin_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_LIN_VEL, Controller_Node.MAX_LIN_VEL)
         ang_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_ANG_VEL, Controller_Node.MAX_ANG_VEL)

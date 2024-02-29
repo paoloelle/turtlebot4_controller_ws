@@ -21,7 +21,7 @@ class Object_Counter(Node):
         )
 
     def object_callback(self, pose_msg):
-        for object_index, pose_object in enumerate(pose_msg.poses[:-1]):  # drop last element cause is a dummy element (see arena.sdf for more info
+        for object_index, pose_object in enumerate(pose_msg.poses[:-1]):  # drop last element cause is a dummy element (see arena.sdf for more info)
             if pose_object.position.y < 0.5:
                 Object_Counter.object_nest[object_index] = True
             else:
