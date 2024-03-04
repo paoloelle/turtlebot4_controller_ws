@@ -24,7 +24,8 @@ setup(
     entry_points={
         'console_scripts': [
             'turtlebot4_controller_node = turtlebot4_controller.turtlebot4_controller_node:main',
-            'object_counter_node = turtlebot4_controller.object_counter_node:main'
+            'object_counter_node = turtlebot4_controller.object_counter_node:main',
+            'cliff_sensor_node = turtlebot4_controller.cliff_sensor_node:main'
         ],
     },
 )

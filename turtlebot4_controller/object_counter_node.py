@@ -20,6 +20,8 @@ class Object_Counter(Node):
             qos_profile_sensor_data
         )
 
+
+
     def object_callback(self, pose_msg):
         for object_index, pose_object in enumerate(pose_msg.poses[:-1]):  # drop last element cause is a dummy element (see arena.sdf for more info)
             if pose_object.position.y < 0.5:

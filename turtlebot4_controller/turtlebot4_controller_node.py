@@ -10,7 +10,7 @@ import numpy as np
 
 class Controller_Node(Node):
 
-    #turtlebot 4 max velocities
+    #turtlebot4 max velocities
     MAX_LIN_VEL = 0.46 # 0.46 m/s
     MAX_ANG_VEL = 1.90 # 1.90 rad/s
 
@@ -77,6 +77,8 @@ class Controller_Node(Node):
             for bumper_area in self.bumper_areas:
                 self.bumper_areas[bumper_area] = bumper_area in self.bumper_areas_triggered
         
+        print(self.bumper_areas)
+
         # neural network prediction
         #if not self.recevid_first_scan:
         #    self.get_logger().warning('Waiting first scan lecture')
@@ -93,7 +95,7 @@ class Controller_Node(Node):
         # [-pi/8, -3/8 pi], [-3/8 pi, -5/8 pi], [-5/8 pi, -7/8 pi], [-7/8 pi, 7/8 pi]
         
         self.recevid_first_scan = True
-        switch_lectures = False #
+        switch_lectures = False 
         self.filtered_scan.clear() # remove previous values
 
         for angle_limits in self.SECTION_LIMITS:
