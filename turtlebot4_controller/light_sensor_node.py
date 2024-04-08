@@ -24,21 +24,26 @@ class LightSensor(Node):
     def on_timer(self):
 
         base_frame = 'odom'
-        target_frame = 'light_sensor'
+        target_frame = 'light_sensor_frontL'
 
         try:
             t = self.tf_buffer.lookup_transform(
                 target_frame,
                 base_frame,
                 rclpy.time.Time())
+                
+
         except TransformException as ex:
             self.get_logger().info(f'Could not transform {target_frame} to {base_frame}: {ex}')
+            return
+        
+        # create and publish light message
+        light_sensor_msg = Float32()
+        light_sensor_msg.data = 1 / (abs(t.transform.translation.x) + abs(t.transform.translation.y) + abs(t.transform.translation.z))
+        self.publisher.publish(light_sensor_msg)
 
-        if t:
-            light_sensor_msg = Float32()
-            light_sensor_msg.data = t.transform.translation.x + t.transform.translation.y + t.transform.translation.z
-            
-            self.publisher.publish(light_sensor_msg)
+
+
 
 
 def main(args=None):
