@@ -1,50 +1,53 @@
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
-from geometry_msgs.msg import PoseArray, Point
-from nav_msgs.msg import Odometry
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
+from tf2_ros import TransformException
 
-class Light_Sensor(Node):
+from std_msgs.msg import Float32
 
-    lightPoses = None
+class LightSensor(Node):
 
     def __init__(self):
+        
+        super().__init__('light_sensor_node')
 
-        super()__init__('light_sensor_node')
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
-        self.light_pose_subscription = self.create_subscription(
-            PoseArray,
-            'model/lights/pose',
-            self.light_pose_callback
-            qos_profile_sensor_data
-        )
+        self.timer = self.create_timer(1.0, self.on_timer)
 
-        self.robot_position_subscription = self.create_subscription(
-            Odometry,
-            '/odom',
-            self.odom_callback,
-            qos_profile_sensor_data
-        )
-
-    def light_pose_callback(self, light_pose_msg):
-
-        if lightPoses:        
-            self.light_pose_subscription.shutdown()
-        else:
-            for light_pose in light_pose_msg.pose:
-                Light_Sensor.lightPoses.append(light_pose.position)
+        # create publisher
+        self.publisher = self.create_publisher(Float32, 'light', 1)
 
 
+    def on_timer(self):
 
+        base_frame = 'odom'
+        target_frame = 'light_sensor'
+
+        try:
+            t = self.tf_buffer.lookup_transform(
+                target_frame,
+                base_frame,
+                rclpy.time.Time())
+        except TransformException as ex:
+            self.get_logger().info(f'Could not transform {target_frame} to {base_frame}: {ex}')
+
+        if t:
+            light_sensor_msg = Float32()
+            light_sensor_msg.data = t.transform.translation.x + t.transform.translation.y + t.transform.translation.z
+            
+            self.publisher.publish(light_sensor_msg)
 
 
 def main(args=None):
-
     rclpy.init(args=args)
-    light_sensor_node = Light_Sensor()
-    light_sensor_node.spin()
+    light_sensor_node = LightSensor()
+    rclpy.spin(light_sensor_node)
     light_sensor_node.destroy_node()
-    light_sensor_node.shutdown()
+    rclpy.shutdown()
 
-if name == '__main__':
+if __name__ == '__main__':
     main()
+

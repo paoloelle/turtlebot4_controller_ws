@@ -16,7 +16,11 @@
   <depend>irobot_create_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
-  <depedn>nav_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>tf2_ros_py</depend>
+
+  <exec_depend>ros2launch</exec_depend>
   
   
   <export>

@@ -32,7 +32,6 @@ class Cliff_Sensor(Node):
 
         intensity_msg = UInt16()
 
-
         if y_pose <= Cliff_Sensor.nest_lim:
             intensity_msg.data = 1000
         elif y_pose <= Cliff_Sensor.cache_lim:
@@ -45,7 +44,6 @@ class Cliff_Sensor(Node):
         self.intensity_publisher.publish(intensity_msg)
 
 
-        
 def main(args=None):
     rclpy.init(args=args)
     cliff_sensor_node = Cliff_Sensor()
