@@ -1,8 +1,8 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
-from nav_msgs.msg import Odometry
 from std_msgs.msg import UInt16
+from geometry_msgs.msg import PoseArray
 
 class Cliff_Sensor(Node):
 
@@ -17,18 +17,18 @@ class Cliff_Sensor(Node):
 
         #subscriber
         self.odom_subscription = self.create_subscription(
-            Odometry,
-            '/odom',
-            self.odom_callback,
+            PoseArray,
+            '/model/turtlebot4/pose',  
+            self.pose_callback,
             qos_profile_sensor_data            
         )
 
         # publisher
         self.intensity_publisher = self.create_publisher(UInt16, 'cliff_intensity', qos_profile_sensor_data)
 
-    def odom_callback(self, odom_msg):
+    def pose_callback(self, pose_msg):
         
-        y_pose = odom_msg.pose.pose.position.y
+        y_pose = pose_msg.poses[0].position.y
 
         intensity_msg = UInt16()
 
