@@ -4,6 +4,10 @@ from rclpy.qos import qos_profile_sensor_data
 from std_msgs.msg import UInt16
 from geometry_msgs.msg import PoseArray
 
+# this node emulate a cliff sensor, two basic solution can be implemeted:
+# 1- read the position of the robot and output a reading that can be seen like the average reading of the four sensors
+# 2- create the tf static (one for each cliff sensor) like for the light sensors and based on the position of each sensor output a value 
+
 class Cliff_Sensor(Node):
 
     # limits of the 4 different areas
