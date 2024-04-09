@@ -3,10 +3,20 @@ from rclpy.node import Node
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from tf2_ros import TransformException
-
 from std_msgs.msg import Float32
 
+from math import sqrt
+
+# this node emulate a light sensor.
+# it simply get the distance of a light sensor (basically a tf) from the light. The position of the light is hardcoded in this code (values from file arena.sdf).
+# Basically as far as the turtlebot (and consequently the light sensors attached to it) the value of the (emulted) reading from each sensor decreases
+
 class LightSensor(Node):
+
+    # light position from arena.sdf
+    LIGHT_X = 0
+    LIGHT_Y = -0.6
+    LIGHT_Z = 1.5
 
     def __init__(self):
 
@@ -45,7 +55,14 @@ class LightSensor(Node):
 
             # create and publish light message
             light_sensor_msg = Float32()
-            light_sensor_msg.data = 1 / (abs(t.transform.translation.x) + abs(t.transform.translation.y) + abs(t.transform.translation.z))
+            x_diff = abs(t.transform.translation.x) - LightSensor.LIGHT_X
+            y_diff = abs(t.transform.translation.y) - LightSensor.LIGHT_Y
+            z_diff = abs(t.transform.translation.z) - LightSensor.LIGHT_Z
+
+            # compute euclidean distance
+            distance = sqrt(x_diff**2 + y_diff**2 + z_diff**2)
+            
+            light_sensor_msg.data = 1 / distance
             self.light_publishers[light].publish(light_sensor_msg)
 
 

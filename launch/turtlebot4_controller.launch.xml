@@ -1,28 +1,25 @@
 <launch>
 
-    <!--<node pkg='turtlebot4_controller' exec='turtlebot4_controller_node'/>-->
-
-    <!--<node pkg='turtlebot4_controller' exec='object_counter_node'/>-->
     
-    <!--<node pkg='ros_ign_bridge' exec='parameter_bridge'
-        args='/model/objects/pose@geometry_msgs/msg/PoseArray[ignition.msgs.Pose_V'>
-    </node>
-
-    <node pkg='ros_ign_bridge' exec='parameter_bridge'
-        args='/model/lights/pose@geometry_msgs/msg/PoseArray[ignition.msgs.Pose_V'>
-    </node>-->
-
-
+    <!-- launch default simulator-->
     <include file='$(find-pkg-share turtlebot4_ignition_bringup)/launch/turtlebot4_ignition.launch.py'>
         <arg name='world' value='arena'/>
         <arg name='z' value='0.2'/>
     </include>
-
+    
+    <!--launch bridges for position broadcasting (tf and pose)-->
     <include file='$(find-pkg-share turtlebot4_controller)/launch/tf_broadcaster_launch.py'/>
+    
+    <!-- launch controller node -->
+    <!--<node pkg='turtlebot4_controller' exec='turtlebot4_controller_node'/>-->
+    
+    <!-- launch object counter node and bridge for ign ros communication -->
+    <!--<node pkg='turtlebot4_controller' exec='object_counter_node'/>-->
+    <!--<node pkg='ros_ign_bridge' exec='parameter_bridge'
+        args='/model/objects/pose@geometry_msgs/msg/PoseArray[ignition.msgs.Pose_V'>
+    </node>-->
 
-
-
-
+    <!-- launch light sensor node (this node emulates a light sensor, see code for more details)-->
     <!--<node pkg="turtlebot4_controller" exec="light_sensor_node" />-->
 
 
