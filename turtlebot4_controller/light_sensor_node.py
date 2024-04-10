@@ -46,7 +46,8 @@ class LightSensor(Node):
                 t = self.tf_buffer.lookup_transform(
                     target_frame,
                     self.base_frame,
-                    rclpy.time.Time())
+                    rclpy.time.Time()
+                    )
 
 
             except TransformException as ex:

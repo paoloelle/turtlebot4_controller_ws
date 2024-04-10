@@ -49,6 +49,7 @@ def generate_launch_description():
             executable= 'parameter_bridge',
             arguments= ['/model/turtlebot4/pose@geometry_msgs/msg/PoseArray[ignition.msgs.Pose_V'],
         ),
+        
 
         # 2- tf static for each cliff sensor (x, y positions from create3.urdf.xacro file)
 
