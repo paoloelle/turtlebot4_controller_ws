@@ -3,7 +3,7 @@
     <!-- launch default simulator-->
     <include file='$(find-pkg-share turtlebot4_ignition_bringup)/launch/turtlebot4_ignition.launch.py'>
         <arg name='world' value='arena'/>
-        <arg name='z' value='0.2'/>
+        <arg name='z' value='0.5'/>
     </include>
     
     <!--launch bridges for position broadcasting (tf and pose)-->
