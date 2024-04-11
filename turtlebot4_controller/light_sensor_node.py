@@ -20,7 +20,7 @@ class LightSensor(Node):
 
     def __init__(self):
 
-        self.light_sensors_list = ['light_sensor_frontL', 'light_sensor_frontR', 'light_sensor_back']
+        self.light_sensors_list = ['turtlebot4'] #['light_sensor_frontL', 'light_sensor_frontR', 'light_sensor_back']
         self.base_frame = 'arena' # to get the position related to the arena
         
         super().__init__('light_sensor_node')
@@ -44,8 +44,8 @@ class LightSensor(Node):
 
             try:
                 t = self.tf_buffer.lookup_transform(
-                    target_frame,
-                    self.base_frame,
+                    self.base_frame, # reference frame
+                    target_frame, # child frame
                     rclpy.time.Time()
                     )
 
@@ -53,6 +53,7 @@ class LightSensor(Node):
             except TransformException as ex:
                 self.get_logger().info(f'Could not transform {target_frame} to {self.base_frame}: {ex}')
                 return
+            
 
             # create and publish light message
             light_sensor_msg = Float32()
