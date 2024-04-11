@@ -22,7 +22,7 @@ class Cliff_Sensor(Node):
     def __init__(self):
 
 
-        self.cliff_sensors_list = ['cliff_sensor_side_left']#, 'cliff_sensor_side_right', 'cliff_sensor_front_left', 'cliff_sensor_front_right']
+        self.cliff_sensors_list = ['cliff_sensor_side_left', 'cliff_sensor_side_right', 'cliff_sensor_front_left', 'cliff_sensor_front_right']
         self.base_frame = 'arena' # to get the position related to the arena
 
         super().__init__('cliff_sensor_node')
@@ -68,7 +68,7 @@ class Cliff_Sensor(Node):
 
             y_pose = t.transform.translation.y
 
-            self.get_logger().info("%s" % t)
+            #self.get_logger().info("%s" % t)
 
 
             intensity_msg = Float32()
