@@ -10,7 +10,7 @@ import numpy as np
 
 class Controller_Node(Node):
 
-    #turtlebot 4 max velocities
+    #turtlebot4 max velocities
     MAX_LIN_VEL = 0.46 # 0.46 m/s
     MAX_ANG_VEL = 1.90 # 1.90 rad/s
 
@@ -44,7 +44,16 @@ class Controller_Node(Node):
                                (5/8*pi, 7/8*pi), (-pi/8, -3/8*pi), (-3/8*pi, -5/8*pi),
                                (-5/8*pi, -7/8*pi), (-7/8*pi, 7/8*pi)]
         
-        self.bumper = 0 # 0 = no collision, 1 = collision
+        # list of bumper areas
+        self.bumper_areas =  {
+            "bump_right" : False,
+            "bump_front_right": False,
+            "bump_front_center": False,
+            "bump_front_left": False,
+            "bump_left": False
+        }
+
+        self.bumper_areas_triggered = set() # save bumper areas triggered at every iteraction
 
         self.ann_controller = ANN_controller(input_size, hidden_size, output_size)
 
@@ -52,24 +61,30 @@ class Controller_Node(Node):
     
     def hazard_callback(self, hazard_msg): # care only about bumper collision
 
-        if not hazard_msg.detections:
-            self.bumper = 0
-            
-        else:
-            for hazards in hazard_msg.detections:
-                if hazards.type == 1:
-                    self.bumper = 1
-                    self.get_logger().warning('collision')
-                else:
-                    self.bumper = 0
+        self.bumper_areas_triggered.clear()
 
+        if not hazard_msg.detections: # if there aren't hazard detected
+            for bumper_index in self.bumper_areas:
+                self.bumper_areas[bumper_index] = False
         
-        # neural network prediction
-        if not self.recevid_first_scan:
-            self.get_logger().warning('Waiting first scan lecture')
+        # build the set of bumper areas wich were triggered 
         else:
-            lin_vel, ang_vel = self.get_target_vel()
-            self.publish_twist(lin_vel, ang_vel)
+            for hazard in hazard_msg.detections:
+                if hazard.type == 1: # this means bumper triggered
+                    self.bumper_areas_triggered.add(hazard.header.frame_id)
+            
+            # check the bumper area triggered and update the dictionary
+            for bumper_area in self.bumper_areas:
+                self.bumper_areas[bumper_area] = bumper_area in self.bumper_areas_triggered
+        
+        print(self.bumper_areas)
+
+        # neural network prediction
+        #if not self.recevid_first_scan:
+        #    self.get_logger().warning('Waiting first scan lecture')
+        #else:
+        #    lin_vel, ang_vel = self.get_target_vel()
+        #    self.publish_twist(lin_vel, ang_vel)
 
 
     def scan_callback(self, scan_msg):
@@ -97,17 +112,18 @@ class Controller_Node(Node):
 
 
         # neural network prediction
-        if not self.recevid_first_scan:
-            self.get_logger().warning('Waiting first scan lecture')
-        else:
-            lin_vel, ang_vel = self.get_target_vel()
-            self.publish_twist(lin_vel, ang_vel)    
+        #if not self.recevid_first_scan:
+        #    self.get_logger().warning('Waiting first scan lecture')
+        #else:
+        #    lin_vel, ang_vel = self.get_target_vel()
+        #    self.publish_twist(lin_vel, ang_vel)    
 
 
 
 
     def get_target_vel(self):
-
+        
+        # TODO modify the forward of ann 
         lin_vel, ang_vel = self.ann_controller.forward([self.bumper] + self.filtered_scan)
         lin_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_LIN_VEL, Controller_Node.MAX_LIN_VEL)
         ang_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_ANG_VEL, Controller_Node.MAX_ANG_VEL)
@@ -184,12 +200,12 @@ def main(args=None):
     
 
     # upload weights from param.txt
-    param_path = '/home/pleopardi/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt' #FIXME sdon't use absolute path
-    weights = open(param_path).read()
-    weights = np.array(weights.split(','), np.float64)
+    #param_path = '/home/pleopardi/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt' #FIXME don't use absolute path
+    #weights = open(param_path).read()
+    #weights = np.array(weights.split(','), np.float64)
 
 
-    controller_node.ann_controller.upload_parameters(weights)
+    #controller_node.ann_controller.upload_parameters(weights)
 
     rclpy.spin(controller_node)
  
