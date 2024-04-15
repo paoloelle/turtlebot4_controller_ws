@@ -6,7 +6,8 @@ from irobot_create_msgs.msg import HazardDetectionVector
 from turtlebot4_controller.ann_controller import ANN_controller
 from math import pi
 from geometry_msgs.msg import Twist
-import numpy as np
+from std_msgs.msg import Float32
+
 
 class Controller_Node(Node):
 
@@ -18,20 +19,19 @@ class Controller_Node(Node):
 
         super().__init__('ann_controller')
 
-        # subscribers
-        self.scan_subscription = self.create_subscription(
-            LaserScan,
-            'scan',
-            self.scan_callback,
-            qos_profile_sensor_data
-        )
+        # subscribers for the sensors
 
-        self.hazard_subscription= self.create_subscription(
-            HazardDetectionVector,
-            'hazard_detection',
-            self.hazard_callback,
-            qos_profile_sensor_data
-        )
+        self.scan_subscription = self.create_subscription(LaserScan, 'scan', self.scan_callback, qos_profile_sensor_data) # lidar 
+
+        self.hazard_subscription= self.create_subscription(HazardDetectionVector, 'hazard_detection', self.hazard_callback, qos_profile_sensor_data) # bumper
+
+        # light sensors
+        self.light_frontL_subscriber = self.create_subscription(Float32, 'light_sensor_frontL', self.light_frontL_callback, qos_profile_sensor_data) # light front left
+        self.light_frontR_subscriber = self.create_subscription(Float32, 'light_sensor_frontR', self.light_frontL_callback, qos_profile_sensor_data) # light front right
+        self.light_back_subscriber = self.create_subscription(Float32, 'light_sensor_back', self.light_back_callback, qos_profile_sensor_data) # light back
+
+        # cliff sensors
+        #self.cliff_sideL_subscriber = self.create_subscription(Float32, 'cliff_sensor_side_left', self.cliff)
 
         # publisher
         self.twist_publisher = self.create_publisher(Twist, 'cmd_vel', qos_profile_sensor_data)
@@ -56,6 +56,10 @@ class Controller_Node(Node):
         self.bumper_areas_triggered = set() # save bumper areas triggered at every iteraction
 
         self.ann_controller = ANN_controller(input_size, hidden_size, output_size)
+
+        self.light_frontL_value = None
+        self.light_frontR_value = None
+        self.light_back_value = None
 
         
     
@@ -116,14 +120,25 @@ class Controller_Node(Node):
         #    self.get_logger().warning('Waiting first scan lecture')
         #else:
         #    lin_vel, ang_vel = self.get_target_vel()
-        #    self.publish_twist(lin_vel, ang_vel)    
+        #    self.publish_twist(lin_vel, ang_vel)
+
+
+    # light sensors callbacks
+    def light_frontL_callback(self, light_message):
+        self.light_frontL_value = light_message.data
+
+    def light_frontR_callback(self, light_message):
+        self.light_frontR_value = light_message.data
+
+    def light_back_callback(self, light_message):
+        self.light_back_value = light_message.data
 
 
 
 
     def get_target_vel(self):
         
-        # TODO modify the forward of ann 
+        # TODO modify the forward of ann with the other sensors redings
         lin_vel, ang_vel = self.ann_controller.forward([self.bumper] + self.filtered_scan)
         lin_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_LIN_VEL, Controller_Node.MAX_LIN_VEL)
         ang_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_ANG_VEL, Controller_Node.MAX_ANG_VEL)
