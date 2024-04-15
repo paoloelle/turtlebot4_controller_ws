@@ -19,6 +19,9 @@ class Controller_Node(Node):
 
         super().__init__('ann_controller')
 
+        # TODO add waiting time
+        # self.get_logger().warning('Waiting for the initialization )
+
         # subscribers for the sensors
 
         self.scan_subscription = self.create_subscription(LaserScan, 'scan', self.scan_callback, qos_profile_sensor_data) # lidar 
@@ -31,7 +34,11 @@ class Controller_Node(Node):
         self.light_back_subscriber = self.create_subscription(Float32, 'light_sensor_back', self.light_back_callback, qos_profile_sensor_data) # light back
 
         # cliff sensors
-        #self.cliff_sideL_subscriber = self.create_subscription(Float32, 'cliff_sensor_side_left', self.cliff)
+        self.cliff_sideL_subscriber = self.create_subscription(Float32,  'cliff_sensor_side_left',   self.cliff_sideL_callback, qos_profile_sensor_data) # cliff side left
+        self.cliff_sideR_subscriber = self.create_subscription(Float32,  'cliff_sensor_side_right',  self.cliff_sideR_callback, qos_profile_sensor_data) # cliff side right
+        self.cliff_frontL_subscriber = self.create_subscription(Float32, 'cliff_sensor_front_left',  self.cliff_frontL_callback, qos_profile_sensor_data) # cliff front left
+        self.cliff_frontR_subscriber = self.create_subscription(Float32, 'cliff_sensor_front_right', self.cliff_frontR_callback, qos_profile_sensor_data) # cliff front right
+
 
         # publisher
         self.twist_publisher = self.create_publisher(Twist, 'cmd_vel', qos_profile_sensor_data)
@@ -59,9 +66,13 @@ class Controller_Node(Node):
 
         self.light_frontL_value = None
         self.light_frontR_value = None
-        self.light_back_value = None
+        self.light_back_value   = None
 
-        
+        self.cliff_sideL_value  = None
+        self.cliff_sideR_value  = None
+        self.cliff_frontL_value = None
+        self.cliff_frontR_value = None
+
     
     def hazard_callback(self, hazard_msg): # care only about bumper collision
 
@@ -133,7 +144,22 @@ class Controller_Node(Node):
     def light_back_callback(self, light_message):
         self.light_back_value = light_message.data
 
+    def compute_light_gradient(self):
+        
 
+
+    # cliff sensors callbacks
+    def cliff_sideL_callback(self, cliff_message):
+        self.cliff_sideL_value = cliff_message.data
+
+    def cliff_sideR_callback(self, cliff_message):
+        self.cliff_sideR_value = cliff_message.data
+    
+    def cliff_frontL_callback(self, cliff_message):
+        self.cliff_frontL_value = cliff_message.data
+    
+    def cliff_frontR_callback(self, cliff_message):
+        self.cliff_frontR_value = cliff_message.data
 
 
     def get_target_vel(self):

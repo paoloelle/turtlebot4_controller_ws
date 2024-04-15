@@ -10,7 +10,7 @@
     <include file='$(find-pkg-share turtlebot4_controller)/launch/tf_broadcaster_launch.py'/>
     
     <!-- launch controller node -->
-    <!--<node pkg='turtlebot4_controller' exec='turtlebot4_controller_node'/>-->
+    <node pkg='turtlebot4_controller' exec='turtlebot4_controller_node'/>
     
     <!-- launch object counter node and bridge for ign ros communication -->
     <!--<node pkg='turtlebot4_controller' exec='object_counter_node'/>-->
