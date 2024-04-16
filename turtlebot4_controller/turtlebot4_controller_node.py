@@ -7,6 +7,9 @@ from turtlebot4_controller.ann_controller import ANN_controller
 from math import pi
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float32
+import time
+import numpy as np
+from math import atan2
 
 
 class Controller_Node(Node):
@@ -15,18 +18,23 @@ class Controller_Node(Node):
     MAX_LIN_VEL = 0.46 # 0.46 m/s
     MAX_ANG_VEL = 1.90 # 1.90 rad/s
 
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(self):
 
         super().__init__('ann_controller')
 
-        # TODO add waiting time
-        # self.get_logger().warning('Waiting for the initialization )
+        # waiting time to initialize all the parameters in the simulation
+        self.get_logger().warning('Waiting for the initialization')
+        #time.sleep(10)
+        self.get_logger().warning('Controller ready')
+
 
         # subscribers for the sensors
 
-        self.scan_subscription = self.create_subscription(LaserScan, 'scan', self.scan_callback, qos_profile_sensor_data) # lidar 
+        # lidar 
+        self.scan_subscription = self.create_subscription(LaserScan, 'scan', self.scan_callback, qos_profile_sensor_data) 
 
-        self.hazard_subscription= self.create_subscription(HazardDetectionVector, 'hazard_detection', self.hazard_callback, qos_profile_sensor_data) # bumper
+        # bumper
+        self.hazard_subscription= self.create_subscription(HazardDetectionVector, 'hazard_detection', self.hazard_callback, qos_profile_sensor_data) 
 
         # light sensors
         self.light_frontL_subscriber = self.create_subscription(Float32, 'light_sensor_frontL', self.light_frontL_callback, qos_profile_sensor_data) # light front left
@@ -43,14 +51,14 @@ class Controller_Node(Node):
         # publisher
         self.twist_publisher = self.create_publisher(Twist, 'cmd_vel', qos_profile_sensor_data)
 
-        # Initialize this variable to be sure that until the first scan message isn't published no Twist message is published on cmd_vel
-        self.recevid_first_scan = False
-        self.filtered_scan = []
+
+        self.filtered_scan = [] # store filtered scan 
         
         self.SECTION_LIMITS = [(-pi/8, pi/8), (pi/8, 3/8*pi), (3/8*pi, 5/8*pi),
                                (5/8*pi, 7/8*pi), (-pi/8, -3/8*pi), (-3/8*pi, -5/8*pi),
-                               (-5/8*pi, -7/8*pi), (-7/8*pi, 7/8*pi)]
+                               (-5/8*pi, -7/8*pi), (-7/8*pi, 7/8*pi)] # section limits to split the scan readings
         
+
         # list of bumper areas
         self.bumper_areas =  {
             "bump_right" : False,
@@ -61,17 +69,32 @@ class Controller_Node(Node):
         }
 
         self.bumper_areas_triggered = set() # save bumper areas triggered at every iteraction
+        
 
-        self.ann_controller = ANN_controller(input_size, hidden_size, output_size)
-
+        # light sensors reading 
         self.light_frontL_value = None
         self.light_frontR_value = None
-        self.light_back_value   = None
+        self.light_back_value = None
+        self.light_direction = None # light gradient direction
 
+        # cliff sensors reading
         self.cliff_sideL_value  = None
         self.cliff_sideR_value  = None
         self.cliff_frontL_value = None
         self.cliff_frontR_value = None
+
+
+        self.controller_input = [self.filtered_scan,
+                                 self.bumper_areas,
+                                 self.light_direction,
+                                 self.cliff_sideL_value, self.cliff_sideR_value, self.cliff_frontL_value, self.cliff_frontR_value
+                                 ]
+        
+        # initialize ANN
+        self.INPUT_SIZE = len(self.controller_input)
+        self.HIDDEN_SIZE = 8
+        self.OUTPUT_SIZE = 2 # linear velocity, angular velocity
+        self.ann_controller = ANN_controller(self.INPUT_SIZE, self.HIDDEN_SIZE, self.OUTPUT_SIZE)
 
     
     def hazard_callback(self, hazard_msg): # care only about bumper collision
@@ -91,15 +114,12 @@ class Controller_Node(Node):
             # check the bumper area triggered and update the dictionary
             for bumper_area in self.bumper_areas:
                 self.bumper_areas[bumper_area] = bumper_area in self.bumper_areas_triggered
-        
-        print(self.bumper_areas)
 
-        # neural network prediction
-        #if not self.recevid_first_scan:
-        #    self.get_logger().warning('Waiting first scan lecture')
-        #else:
-        #    lin_vel, ang_vel = self.get_target_vel()
-        #    self.publish_twist(lin_vel, ang_vel)
+        self.publish_twist()
+
+        
+        
+
 
 
     def scan_callback(self, scan_msg):
@@ -109,7 +129,7 @@ class Controller_Node(Node):
         # [-pi/8, pi/8], [pi/8, 3/8 pi], [3/8 pi, 5/8 pi], [5/8 pi, 7/8 pi]
         # [-pi/8, -3/8 pi], [-3/8 pi, -5/8 pi], [-5/8 pi, -7/8 pi], [-7/8 pi, 7/8 pi]
         
-        self.recevid_first_scan = True
+        #self.recevid_first_scan = True
         switch_lectures = False 
         self.filtered_scan.clear() # remove previous values
 
@@ -125,75 +145,84 @@ class Controller_Node(Node):
             
             self.filtered_scan.append(min_distance)
 
+        self.publish_twist()
 
-        # neural network prediction
-        #if not self.recevid_first_scan:
-        #    self.get_logger().warning('Waiting first scan lecture')
-        #else:
-        #    lin_vel, ang_vel = self.get_target_vel()
-        #    self.publish_twist(lin_vel, ang_vel)
 
 
     # light sensors callbacks
     def light_frontL_callback(self, light_message):
         self.light_frontL_value = light_message.data
+        self.compute_light_gradient()
 
     def light_frontR_callback(self, light_message):
         self.light_frontR_value = light_message.data
+        self.compute_light_gradient()
 
     def light_back_callback(self, light_message):
         self.light_back_value = light_message.data
+        self.compute_light_gradient()
 
-    def compute_light_gradient(self):
+    def compute_light_gradient(self): #TODO
+        # this function as to be called on every light callback
+        # and modify the the ligh gradtient value
+        # and do the forward of the ANN
+        dx = self.light_frontL_value - self.light_back_value
+        dy = self.light_frontL_value - self.light_frontR_value
+        self.light_direction = atan2(dy, dx)
+        self.publish_twist()
+
         
 
 
     # cliff sensors callbacks
     def cliff_sideL_callback(self, cliff_message):
         self.cliff_sideL_value = cliff_message.data
+        self.publish_twist()
 
     def cliff_sideR_callback(self, cliff_message):
         self.cliff_sideR_value = cliff_message.data
+        self.publish_twist()
     
     def cliff_frontL_callback(self, cliff_message):
         self.cliff_frontL_value = cliff_message.data
+        self.publish_twist()
     
     def cliff_frontR_callback(self, cliff_message):
         self.cliff_frontR_value = cliff_message.data
+        self.publish_twist()
 
 
-    def get_target_vel(self):
-        
-        # TODO modify the forward of ann with the other sensors redings
-        lin_vel, ang_vel = self.ann_controller.forward([self.bumper] + self.filtered_scan)
-        lin_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_LIN_VEL, Controller_Node.MAX_LIN_VEL)
-        ang_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_ANG_VEL, Controller_Node.MAX_ANG_VEL)
-        return lin_vel, ang_vel
 
     
-    def publish_twist(self, lin_vel, ang_vel):
+    def publish_twist(self):
 
+        # neural network prediction
+        lin_vel, ang_vel = self.get_target_vel()
+        self.publish_twist(lin_vel, ang_vel)
+
+        # create and populate Twist message
         twist_msg = Twist()
         twist_msg.linear.x = lin_vel
         twist_msg.angular.z = ang_vel
-
-
         self.twist_publisher.publish(twist_msg)
         self.get_logger().info('\nLinear vel: "%s" \nAngular vel:  "%s"' % (lin_vel, ang_vel))
 
             
+    def get_target_vel(self):
+        
+        lin_vel, ang_vel = self.ann_controller.forward(self.controller_input)
+        lin_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_LIN_VEL, Controller_Node.MAX_LIN_VEL)
+        ang_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_ANG_VEL, Controller_Node.MAX_ANG_VEL)
+        return lin_vel, ang_vel
 
 
 
-    @staticmethod
+    
     def map_value_vel_limits(value, vel_lim_min, vel_lim_max):
         return (value - vel_lim_max)/(vel_lim_max-vel_lim_min)
-
-
-            
-        
-    @staticmethod
-    def get_min_distance(scan_msg, min_index, max_index, switch_lectures):
+ 
+    
+    def get_min_distance(self, scan_msg, min_index, max_index, switch_lectures):
 
         if switch_lectures:
             section_lectures = scan_msg.ranges[0:min_index] + scan_msg.ranges[max_index:]
@@ -207,11 +236,9 @@ class Controller_Node(Node):
         
 
         return min(normalized_lectures)
-               
 
-
-    @staticmethod
-    def get_reference_index(scan_msg, min_angle, max_angle):
+    
+    def get_reference_index(self, scan_msg, min_angle, max_angle):
                   
         min_angle = min_angle + pi
         max_angle = max_angle + pi
@@ -233,20 +260,23 @@ def main(args=None):
 
     rclpy.init(args=args)
 
-    INPUT_SIZE = 9 # BUMPER (1) + LASER SCAN FILTERED (8)
-    HIDDEN_SIZE = 8
-    OUTPUT_SIZE = 2 # linear vel x, angular vel z
-
-    controller_node = Controller_Node(INPUT_SIZE, HIDDEN_SIZE, OUTPUT_SIZE)
+    controller_node = Controller_Node()
     
 
+    # generate weights
+    number_of_weights = (controller_node.INPUT_SIZE*controller_node.HIDDEN_SIZE + controller_node.HIDDEN_SIZE*controller_node.OUTPUT_SIZE) - 1 
+    weights = "0.5,"*number_of_weights + "0.5"
+
+    with open("param2.txt", "w") as file:
+        file.write(weights)
+
     # upload weights from param.txt
-    #param_path = '/home/pleopardi/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt' #FIXME don't use absolute path
-    #weights = open(param_path).read()
-    #weights = np.array(weights.split(','), np.float64)
+    param_path = '/home/paolo/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param2.txt' #FIXME don't use absolute path
+    weights = open(param_path).read()
+    weights = np.array(weights.split(','), np.float64)
+    print(weights.dtype)
 
-
-    #controller_node.ann_controller.upload_parameters(weights)
+    controller_node.ann_controller.upload_parameters(weights)
 
     rclpy.spin(controller_node)
  
