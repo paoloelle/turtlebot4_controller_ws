@@ -68,6 +68,7 @@ class Controller_Node(Node):
             "bump_left": False
         }
 
+
         self.bumper_areas_triggered = set() # save bumper areas triggered at every iteraction
         
 
@@ -85,13 +86,14 @@ class Controller_Node(Node):
 
 
         self.controller_input = [self.filtered_scan,
-                                 self.bumper_areas,
+                                 1, 1, 1, 1, 1, #FIXME bumper values (take the value of the dictionary as number)
                                  self.light_direction,
                                  self.cliff_sideL_value, self.cliff_sideR_value, self.cliff_frontL_value, self.cliff_frontR_value
-                                 ]
+                                 ] #TODO questo non serve perche tanto cosi non si aggiorna ad ogni iterazione
+
         
         # initialize ANN
-        self.INPUT_SIZE = len(self.controller_input)
+        self.INPUT_SIZE = len(self.controller_input) # TODO questo si puo tenere ma passare a len le diverse variabili
         self.HIDDEN_SIZE = 8
         self.OUTPUT_SIZE = 2 # linear velocity, angular velocity
         self.ann_controller = ANN_controller(self.INPUT_SIZE, self.HIDDEN_SIZE, self.OUTPUT_SIZE)
@@ -114,6 +116,8 @@ class Controller_Node(Node):
             # check the bumper area triggered and update the dictionary
             for bumper_area in self.bumper_areas:
                 self.bumper_areas[bumper_area] = bumper_area in self.bumper_areas_triggered
+
+        print(self.bumper_areas)
 
         self.publish_twist()
 
