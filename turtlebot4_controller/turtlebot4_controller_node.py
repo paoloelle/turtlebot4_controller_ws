@@ -10,7 +10,7 @@ from std_msgs.msg import Float32
 import time
 import numpy as np
 from math import atan2
-
+import random
 
 class Controller_Node(Node):
 
@@ -90,11 +90,9 @@ class Controller_Node(Node):
         self.ann_controller = ANN_controller(self.INPUT_SIZE, self.HIDDEN_SIZE, self.OUTPUT_SIZE)
 
 
-        self.enable_controller = False
+        self.enable_controller = False # this variable became true when all the sensor values are not None
 
-        
 
-    
     def hazard_callback(self, hazard_msg): # care only about bumper collision
 
         self.bumper_areas_triggered.clear()
@@ -157,24 +155,13 @@ class Controller_Node(Node):
         self.light_back_value = light_message.data
         self.compute_light_gradient()
 
-    def compute_light_gradient(self): #TODO
-        # this function as to be called on every light callback
-        # and modify the the ligh gradtient value
-        # and do the forward of the ANN
-
-        print("1: " + str(self.light_frontL_value))
-        print("2: " + str(self.light_frontR_value))
-        print("3: " + str(self.light_back_value))
-        print(self.light_direction)
-
+    def compute_light_gradient(self):
 
         if self.light_frontL_value and self.light_frontR_value and self.light_back_value:
             dx = self.light_frontL_value - self.light_back_value
             dy = self.light_frontL_value - self.light_frontR_value
             self.light_direction = atan2(dy, dx)
             self.publish_twist()
-
-        
 
 
     # cliff sensors callbacks
@@ -207,7 +194,7 @@ class Controller_Node(Node):
         twist_msg.linear.x = lin_vel
         twist_msg.angular.z = ang_vel
         self.twist_publisher.publish(twist_msg)
-        self.get_logger().info('\nLinear vel: "%s" \nAngular vel:  "%s"' % (lin_vel, ang_vel))
+        #self.get_logger().info('\nLinear vel: "%s" \nAngular vel:  "%s"' % (lin_vel, ang_vel))
 
             
     def get_target_vel(self):
@@ -220,6 +207,14 @@ class Controller_Node(Node):
             self.cliff_frontL_value is not None,
             self.cliff_frontR_value
         ])
+        
+        print(str(self.filtered_scan) + "\n" +
+            str(self.light_direction)   + "\n" +
+            str(self.cliff_sideL_value) + "\n" +
+            str(self.cliff_sideR_value) + "\n" +
+            str(self.cliff_frontL_value) + "\n" +
+            str(self.cliff_frontR_value))
+        
 
  
         if self.enable_controller:
@@ -286,14 +281,21 @@ def main(args=None):
     
 
     # generate weights
-    number_of_weights = (controller_node.INPUT_SIZE*controller_node.HIDDEN_SIZE + controller_node.HIDDEN_SIZE*controller_node.OUTPUT_SIZE) - 1 
-    weights = "0.5,"*number_of_weights + "0.5"
+    number_of_weights = (controller_node.INPUT_SIZE*controller_node.HIDDEN_SIZE + controller_node.HIDDEN_SIZE*controller_node.OUTPUT_SIZE)
+    #weights = "0.5,"*number_of_weights + "0.5"
 
-    with open("/home/paolo/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param2.txt", "w") as file:
-        file.write(weights)
+    #with open("/home/paolo/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt", "w") as file:
+    #    file.write(weights)
+
+    # Genera i pesi casuali
+    weights = [random.uniform(0, 1) for _ in range(number_of_weights)]
+
+    # Scrivi i pesi nel file .txt
+    with open("/home/paolo/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt", "w") as file:
+        file.write(",".join(map(str, weights)))
 
     # upload weights from param.txt
-    param_path = '/home/paolo/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param2.txt' #FIXME don't use absolute path
+    param_path = '/home/paolo/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt' # CHANGE if you are using swarm lab
     weights = open(param_path).read()
     weights = np.array(weights.split(','), np.float64)
 

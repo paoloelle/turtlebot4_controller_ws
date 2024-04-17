@@ -19,9 +19,9 @@
     </node>-->
 
     <!-- launch light sensor node (this node emulate light sensors, see code for more details)-->
-    <!--<node pkg="turtlebot4_controller" exec="light_sensor_node"/>-->
+    <node pkg="turtlebot4_controller" exec="light_sensor_node"/>
 
     <!-- launch cliff sensor node (this node emulate cliff sensors, see code for more details -->
-    <!--node pkg="turtlebot4_controller" exec="cliff_sensor_node"/>-->
+    <node pkg="turtlebot4_controller" exec="cliff_sensor_node"/>
 
 </launch>
