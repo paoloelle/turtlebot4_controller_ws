@@ -28,7 +28,7 @@ class LightSensor(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
-        self.timer = self.create_timer(1.0, self.on_timer)
+        self.timer = self.create_timer(0.5, self.on_timer)
 
         # create publishers
         self.light_publishers = {}

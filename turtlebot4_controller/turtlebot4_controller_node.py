@@ -23,10 +23,8 @@ class Controller_Node(Node):
         super().__init__('ann_controller')
 
         # waiting time to initialize all the parameters in the simulation
-        self.get_logger().warning('Waiting for the initialization')
-        #time.sleep(10)
-        self.get_logger().warning('Controller ready')
-
+        #self.get_logger().warning('Waiting for the initialization')
+        self.enable_controller = True
 
         # subscribers for the sensors
 
@@ -38,7 +36,7 @@ class Controller_Node(Node):
 
         # light sensors
         self.light_frontL_subscriber = self.create_subscription(Float32, 'light_sensor_frontL', self.light_frontL_callback, qos_profile_sensor_data) # light front left
-        self.light_frontR_subscriber = self.create_subscription(Float32, 'light_sensor_frontR', self.light_frontL_callback, qos_profile_sensor_data) # light front right
+        self.light_frontR_subscriber = self.create_subscription(Float32, 'light_sensor_frontR', self.light_frontR_callback, qos_profile_sensor_data) # light front right
         self.light_back_subscriber = self.create_subscription(Float32, 'light_sensor_back', self.light_back_callback, qos_profile_sensor_data) # light back
 
         # cliff sensors
@@ -84,19 +82,17 @@ class Controller_Node(Node):
         self.cliff_frontL_value = None
         self.cliff_frontR_value = None
 
-
-        self.controller_input = [self.filtered_scan,
-                                 1, 1, 1, 1, 1, #FIXME bumper values (take the value of the dictionary as number)
-                                 self.light_direction,
-                                 self.cliff_sideL_value, self.cliff_sideR_value, self.cliff_frontL_value, self.cliff_frontR_value
-                                 ] #TODO questo non serve perche tanto cosi non si aggiorna ad ogni iterazione
-
         
         # initialize ANN
-        self.INPUT_SIZE = len(self.controller_input) # TODO questo si puo tenere ma passare a len le diverse variabili
+        self.INPUT_SIZE = 5 + 8 + 1 + 4
         self.HIDDEN_SIZE = 8
         self.OUTPUT_SIZE = 2 # linear velocity, angular velocity
         self.ann_controller = ANN_controller(self.INPUT_SIZE, self.HIDDEN_SIZE, self.OUTPUT_SIZE)
+
+
+        self.enable_controller = False
+
+        
 
     
     def hazard_callback(self, hazard_msg): # care only about bumper collision
@@ -117,12 +113,8 @@ class Controller_Node(Node):
             for bumper_area in self.bumper_areas:
                 self.bumper_areas[bumper_area] = bumper_area in self.bumper_areas_triggered
 
-        print(self.bumper_areas)
 
         self.publish_twist()
-
-        
-        
 
 
 
@@ -133,7 +125,6 @@ class Controller_Node(Node):
         # [-pi/8, pi/8], [pi/8, 3/8 pi], [3/8 pi, 5/8 pi], [5/8 pi, 7/8 pi]
         # [-pi/8, -3/8 pi], [-3/8 pi, -5/8 pi], [-5/8 pi, -7/8 pi], [-7/8 pi, 7/8 pi]
         
-        #self.recevid_first_scan = True
         switch_lectures = False 
         self.filtered_scan.clear() # remove previous values
 
@@ -170,10 +161,18 @@ class Controller_Node(Node):
         # this function as to be called on every light callback
         # and modify the the ligh gradtient value
         # and do the forward of the ANN
-        dx = self.light_frontL_value - self.light_back_value
-        dy = self.light_frontL_value - self.light_frontR_value
-        self.light_direction = atan2(dy, dx)
-        self.publish_twist()
+
+        print("1: " + str(self.light_frontL_value))
+        print("2: " + str(self.light_frontR_value))
+        print("3: " + str(self.light_back_value))
+        print(self.light_direction)
+
+
+        if self.light_frontL_value and self.light_frontR_value and self.light_back_value:
+            dx = self.light_frontL_value - self.light_back_value
+            dy = self.light_frontL_value - self.light_frontR_value
+            self.light_direction = atan2(dy, dx)
+            self.publish_twist()
 
         
 
@@ -202,7 +201,6 @@ class Controller_Node(Node):
 
         # neural network prediction
         lin_vel, ang_vel = self.get_target_vel()
-        self.publish_twist(lin_vel, ang_vel)
 
         # create and populate Twist message
         twist_msg = Twist()
@@ -214,15 +212,35 @@ class Controller_Node(Node):
             
     def get_target_vel(self):
         
-        lin_vel, ang_vel = self.ann_controller.forward(self.controller_input)
-        lin_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_LIN_VEL, Controller_Node.MAX_LIN_VEL)
-        ang_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_ANG_VEL, Controller_Node.MAX_ANG_VEL)
+        self.enable_controller = all([
+            self.filtered_scan      is not None,
+            self.light_direction    is not None,
+            self.cliff_sideL_value  is not None,
+            self.cliff_sideR_value  is not None,
+            self.cliff_frontL_value is not None,
+            self.cliff_frontR_value
+        ])
+
+ 
+        if self.enable_controller:
+            lin_vel, ang_vel = self.ann_controller.forward(self.filtered_scan 
+                                                       + list(self.bumper_areas.values())
+                                                       + [self.light_direction]  
+                                                       + [self.cliff_frontL_value, self.cliff_frontR_value, self.cliff_sideL_value, self.cliff_sideR_value])
+        
+            lin_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_LIN_VEL, Controller_Node.MAX_LIN_VEL)
+            ang_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_ANG_VEL, Controller_Node.MAX_ANG_VEL)
+        
+        else:
+            lin_vel = 0.0
+            ang_vel = 0.0
+
         return lin_vel, ang_vel
 
 
 
     
-    def map_value_vel_limits(value, vel_lim_min, vel_lim_max):
+    def map_value_vel_limits(self, value, vel_lim_min, vel_lim_max):
         return (value - vel_lim_max)/(vel_lim_max-vel_lim_min)
  
     
@@ -271,14 +289,13 @@ def main(args=None):
     number_of_weights = (controller_node.INPUT_SIZE*controller_node.HIDDEN_SIZE + controller_node.HIDDEN_SIZE*controller_node.OUTPUT_SIZE) - 1 
     weights = "0.5,"*number_of_weights + "0.5"
 
-    with open("param2.txt", "w") as file:
+    with open("/home/paolo/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param2.txt", "w") as file:
         file.write(weights)
 
     # upload weights from param.txt
     param_path = '/home/paolo/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param2.txt' #FIXME don't use absolute path
     weights = open(param_path).read()
     weights = np.array(weights.split(','), np.float64)
-    print(weights.dtype)
 
     controller_node.ann_controller.upload_parameters(weights)
 

@@ -26,6 +26,7 @@ class ANN_controller:
         #W1, b1, W2, b2 = parameters
         #W1, W2 = parameters
 
+
         # activation function hidden layer
         Z1 = np.dot(self.W1, np.transpose(X)) #+ b1  # X row vector, Z column vector
         A1 = np.tanh(Z1)
