@@ -74,13 +74,13 @@ class Cliff_Sensor(Node):
             intensity_msg = Float32()
 
             if y_pose <= Cliff_Sensor.nest_lim:
-                intensity_msg.data = 1000.0
+                intensity_msg.data = 0.2
             elif y_pose <= Cliff_Sensor.cache_lim:
-                intensity_msg.data = 2000.0
+                intensity_msg.data = 0.4
             elif y_pose <= Cliff_Sensor.slope_lim:
-                intensity_msg.data = 3000.0
+                intensity_msg.data = 0.6
             else:
-                intensity_msg.data = 4000.0
+                intensity_msg.data = 0.8
 
             self.cliff_publishers[cliff].publish(intensity_msg)
 

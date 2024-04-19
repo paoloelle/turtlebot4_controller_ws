@@ -7,24 +7,24 @@ from turtlebot4_controller.ann_controller import ANN_controller
 from math import pi
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float32
-import time
 import numpy as np
-from math import atan2
+from math import atan2, copysign
 import random
 
 class Controller_Node(Node):
 
-    #turtlebot4 max velocities
-    MAX_LIN_VEL = 0.46 # 0.46 m/s
-    MAX_ANG_VEL = 1.90 # 1.90 rad/s
 
     def __init__(self):
 
         super().__init__('ann_controller')
 
-        # waiting time to initialize all the parameters in the simulation
-        #self.get_logger().warning('Waiting for the initialization')
-        self.enable_controller = True
+        #turtlebot4 max velocities
+        self.MAX_ANG_VEL = 1.90 # 1.90 rad/s
+        self.MAX_LIN_VEL = 0.46 # 0.46 m/s
+
+        # threshold to determine a target velocity different from 0
+        self.MIN_ANG_VEL = 0.5
+        self.MIN_LIN_VEL = 0.1
 
         # subscribers for the sensors
 
@@ -194,7 +194,7 @@ class Controller_Node(Node):
         twist_msg.linear.x = lin_vel
         twist_msg.angular.z = ang_vel
         self.twist_publisher.publish(twist_msg)
-        #self.get_logger().info('\nLinear vel: "%s" \nAngular vel:  "%s"' % (lin_vel, ang_vel))
+        self.get_logger().info('\nLinear vel: "%s" \nAngular vel:  "%s"' % (lin_vel, ang_vel))
 
             
     def get_target_vel(self):
@@ -205,15 +205,8 @@ class Controller_Node(Node):
             self.cliff_sideL_value  is not None,
             self.cliff_sideR_value  is not None,
             self.cliff_frontL_value is not None,
-            self.cliff_frontR_value
+            self.cliff_frontR_value is not None
         ])
-        
-        print(str(self.filtered_scan) + "\n" +
-            str(self.light_direction)   + "\n" +
-            str(self.cliff_sideL_value) + "\n" +
-            str(self.cliff_sideR_value) + "\n" +
-            str(self.cliff_frontL_value) + "\n" +
-            str(self.cliff_frontR_value))
         
 
  
@@ -222,22 +215,39 @@ class Controller_Node(Node):
                                                        + list(self.bumper_areas.values())
                                                        + [self.light_direction]  
                                                        + [self.cliff_frontL_value, self.cliff_frontR_value, self.cliff_sideL_value, self.cliff_sideR_value])
-        
-            lin_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_LIN_VEL, Controller_Node.MAX_LIN_VEL)
-            ang_vel = self.map_value_vel_limits(lin_vel, -Controller_Node.MAX_ANG_VEL, Controller_Node.MAX_ANG_VEL)
+
+
+            lin_vel, ang_vel = self.apply_vel_threshold(lin_vel, ang_vel)
         
         else:
             lin_vel = 0.0
             ang_vel = 0.0
 
+
         return lin_vel, ang_vel
 
 
-
+    # apply treshold on linear and angular velocities based on max velocities of the turtlebot4
+    # and min velocities determined by the user to obtain no 0 target_vel
+    def apply_vel_threshold(self, lin_vel, ang_vel):
+        
+        # for the linear velocity we want that the robot will be able to stop but not driving backwards
+        if lin_vel > self.MAX_LIN_VEL:
+            lin_vel = self.MAX_LIN_VEL
+        elif lin_vel < self.MIN_LIN_VEL:
+            lin_vel = 0.0
     
-    def map_value_vel_limits(self, value, vel_lim_min, vel_lim_max):
-        return (value - vel_lim_max)/(vel_lim_max-vel_lim_min)
- 
+
+        # for the target velocity we want allow the robot to rotate clockwise and counter-clockwise and also to not rotate
+        if abs(ang_vel) > abs(self.MAX_ANG_VEL):
+            ang_vel = copysign(self.MAX_ANG_VEL, ang_vel)
+        elif abs(ang_vel) < abs(self.MIN_ANG_VEL):
+            ang_vel = 0.0
+
+        return lin_vel, ang_vel
+
+
+   
     
     def get_min_distance(self, scan_msg, min_index, max_index, switch_lectures):
 
@@ -263,8 +273,8 @@ class Controller_Node(Node):
         msg_angle_min = scan_msg.angle_min + pi
 
         # compute correspondig index
-        lower_index = int((min_angle - msg_angle_min) /scan_msg.angle_increment)
-        upper_index = int((max_angle - msg_angle_min) /scan_msg.angle_increment)
+        lower_index = int((min_angle - msg_angle_min) / scan_msg.angle_increment)
+        upper_index = int((max_angle - msg_angle_min) / scan_msg.angle_increment)
 
         if lower_index > upper_index:
             lower_index, upper_index = upper_index, lower_index
@@ -287,15 +297,15 @@ def main(args=None):
     #with open("/home/paolo/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt", "w") as file:
     #    file.write(weights)
 
-    # Genera i pesi casuali
+    # generate random weights
     weights = [random.uniform(0, 1) for _ in range(number_of_weights)]
 
     # Scrivi i pesi nel file .txt
-    with open("/home/paolo/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt", "w") as file:
+    with open("/home/pleopardi/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt", "w") as file:
         file.write(",".join(map(str, weights)))
 
     # upload weights from param.txt
-    param_path = '/home/paolo/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt' # CHANGE if you are using swarm lab
+    param_path = '/home/pleopardi/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt' # CHANGE if you are using swarm lab
     weights = open(param_path).read()
     weights = np.array(weights.split(','), np.float64)
 
