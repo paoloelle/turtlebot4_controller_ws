@@ -90,7 +90,7 @@ class Controller_Node(Node):
         self.ann_controller = ANN_controller(self.INPUT_SIZE, self.HIDDEN_SIZE, self.OUTPUT_SIZE)
 
 
-        self.enable_controller = False # this variable became true when all the sensor values are not None
+        self.enable_controller = False # this variable becomes true when all the sensor values are not None
 
 
     def hazard_callback(self, hazard_msg): # care only about bumper collision
