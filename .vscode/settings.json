@@ -1,0 +1,24 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/pleopardi/turtlebot4_controller_ws/build/turtlebot4_controller",
+        "/home/pleopardi/turtlebot4_controller_ws/install/turtlebot4_controller/lib/python3.10/site-packages",
+        "/home/pleopardi/create3_ws/install/irobot_create_common_bringup/local/lib/python3.10/dist-packages",
+        "/home/pleopardi/create3_ws/install/irobot_create_msgs/local/lib/python3.10/dist-packages",
+        "/home/pleopardi/turtlebot4_ws/install/turtlebot4_setup/local/lib/python3.10/dist-packages",
+        "/home/pleopardi/turtlebot4_ws/install/turtlebot4_navigation/local/lib/python3.10/dist-packages",
+        "/home/pleopardi/turtlebot4_ws/install/turtlebot4_msgs/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/pleopardi/turtlebot4_controller_ws/build/turtlebot4_controller",
+        "/home/pleopardi/turtlebot4_controller_ws/install/turtlebot4_controller/lib/python3.10/site-packages",
+        "/home/pleopardi/create3_ws/install/irobot_create_common_bringup/local/lib/python3.10/dist-packages",
+        "/home/pleopardi/create3_ws/install/irobot_create_msgs/local/lib/python3.10/dist-packages",
+        "/home/pleopardi/turtlebot4_ws/install/turtlebot4_setup/local/lib/python3.10/dist-packages",
+        "/home/pleopardi/turtlebot4_ws/install/turtlebot4_navigation/local/lib/python3.10/dist-packages",
+        "/home/pleopardi/turtlebot4_ws/install/turtlebot4_msgs/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ]
+}

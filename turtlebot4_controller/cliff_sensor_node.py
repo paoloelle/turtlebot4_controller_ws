@@ -76,11 +76,11 @@ class Cliff_Sensor(Node):
             if y_pose <= Cliff_Sensor.nest_lim:
                 intensity_msg.data = 0.2
             elif y_pose <= Cliff_Sensor.cache_lim:
-                intensity_msg.data = 0.4
+                intensity_msg.data = 0.3
             elif y_pose <= Cliff_Sensor.slope_lim:
-                intensity_msg.data = 0.6
+                intensity_msg.data = 0.4
             else:
-                intensity_msg.data = 0.8
+                intensity_msg.data = 0.5
 
             self.cliff_publishers[cliff].publish(intensity_msg)
 

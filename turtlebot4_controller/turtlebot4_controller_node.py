@@ -23,8 +23,8 @@ class Controller_Node(Node):
         self.MAX_LIN_VEL = 0.46 # 0.46 m/s
 
         # threshold to determine a target velocity different from 0
-        self.MIN_ANG_VEL = 0.5
-        self.MIN_LIN_VEL = 0.1
+        self.MIN_ANG_VEL = 0.1
+        self.MIN_LIN_VEL = 0.05
 
         # subscribers for the sensors
 
@@ -194,7 +194,7 @@ class Controller_Node(Node):
         twist_msg.linear.x = lin_vel
         twist_msg.angular.z = ang_vel
         self.twist_publisher.publish(twist_msg)
-        self.get_logger().info('\nLinear vel: "%s" \nAngular vel:  "%s"' % (lin_vel, ang_vel))
+        self.get_logger().info('\nLinear vel: "%s" \nAngular vel:  "%s"' % (twist_msg.linear.x, twist_msg.angular.z))
 
             
     def get_target_vel(self):
@@ -216,6 +216,8 @@ class Controller_Node(Node):
                                                        + [self.light_direction]  
                                                        + [self.cliff_frontL_value, self.cliff_frontR_value, self.cliff_sideL_value, self.cliff_sideR_value])
 
+            print(lin_vel)
+            print(ang_vel)
 
             lin_vel, ang_vel = self.apply_vel_threshold(lin_vel, ang_vel)
         
@@ -298,14 +300,14 @@ def main(args=None):
     #    file.write(weights)
 
     # generate random weights
-    weights = [random.uniform(0, 1) for _ in range(number_of_weights)]
+    #weights = [random.uniform(0, 1) for _ in range(number_of_weights)]
 
     # Scrivi i pesi nel file .txt
-    with open("/home/pleopardi/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt", "w") as file:
-        file.write(",".join(map(str, weights)))
+    #with open("/home/pleopardi/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt", "w") as file:
+        #file.write(",".join(map(str, weights)))
 
     # upload weights from param.txt
-    param_path = '/home/pleopardi/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt' # CHANGE if you are using swarm lab
+    param_path = '/home/pleopardi/turtlebot4_controller_ws/src/turtlebot4_controller/turtlebot4_controller/param.txt' # CHANGE if you are using swarm lab or personal laptop
     weights = open(param_path).read()
     weights = np.array(weights.split(','), np.float64)
 

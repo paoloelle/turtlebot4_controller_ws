@@ -26,7 +26,8 @@ setup(
             'turtlebot4_controller_node = turtlebot4_controller.turtlebot4_controller_node:main',
             'object_counter_node = turtlebot4_controller.object_counter_node:main',
             'cliff_sensor_node = turtlebot4_controller.cliff_sensor_node:main',
-            'light_sensor_node = turtlebot4_controller.light_sensor_node:main'
+            'light_sensor_node = turtlebot4_controller.light_sensor_node:main',
+            'hand_coded_controller = turtlebot4_controller.hand_coded_controller:main', 
         ],
     },
 )
